@@ -13,7 +13,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Provider configurations
+# Provider configurations (updated March 2026)
 PROVIDERS = {
     "minimax": {
         "base_url": "https://api.minimax.chat/v1",
@@ -24,19 +24,32 @@ PROVIDERS = {
     "zai": {
         "base_url": "https://api.z.ai/api",
         "endpoint": "/anthropic/v1/messages",
-        "model": "claude-3-5-sonnet-20241022",
+        "model": "claude-sonnet-4-6",  # Updated to 4.6
         "env_key": "ZAI_API_KEY",
     },
     "anthropic": {
         "base_url": "https://api.anthropic.com",
         "endpoint": "/v1/messages",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-6",  # Updated to 4.6 (March 2026)
         "env_key": "ANTHROPIC_API_KEY",
     },
     "openrouter": {
         "base_url": "https://openrouter.ai/api/v1",
         "endpoint": "/chat/completions",
-        "model": "google/gemini-2.0-flash-001",
+        "model": "google/gemini-2.0-flash-exp",  # Updated model
+        "env_key": "OPENROUTER_API_KEY",
+    },
+    # Free models from OpenRouter
+    "openrouter_free": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "endpoint": "/chat/completions",
+        "model": "minimax/minimax-m2.5:free",
+        "env_key": "OPENROUTER_API_KEY",
+    },
+    "glm": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "endpoint": "/chat/completions",
+        "model": "z-ai/glm-4.5-air:free",
         "env_key": "OPENROUTER_API_KEY",
     },
 }
