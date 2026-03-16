@@ -8,38 +8,121 @@ Handles execution of prompts through LLM.
 from typing import Optional
 import logging
 
+from .llm_client import get_llm_client, LLMClient
+
 logger = logging.getLogger(__name__)
 
 
 class PromptExecutor:
     """Executes prompts through LLM."""
 
-    def __init__(self, model: str = "claude-sonnet-4-6", temperature: float = 0.7):
+    def __init__(self, model: str = "MiniMax-Text-01", temperature: float = 0.7):
         self.model = model
         self.temperature = temperature
+        self._client: Optional[LLMClient] = None
+
+    @property
+    def client(self) -> LLMClient:
+        """Lazy initialization of LLM client."""
+        if self._client is None:
+            self._client = get_llm_client()
+        return self._client
 
     async def execute(self, prompt_content: str, input_data: dict) -> dict:
         """
-        Execute a prompt with input data.
+        Execute a prompt with input data through LLM.
 
         Args:
-            prompt_content: The prompt template
-            input_data: Input data to fill in
+            prompt_content: The prompt template (markdown content)
+            input_data: Input data to pass to the prompt
 
         Returns:
-            dict: Execution result
+            dict: Execution result with generated content
         """
-        # Placeholder - will be implemented with actual LLM call
         logger.info(f"Executing prompt with model {self.model}")
+
+        # Parse prompt - extract system instruction and user query
+        system_prompt, user_prompt = self._parse_prompt(prompt_content)
+
+        # Add input_data as context
+        result = await self.client.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            context=input_data,
+        )
+
         return {
-            "status": "success",
-            "model": self.model,
-            "output": "Execute with LLM to get results"
+            "status": result.get("status", "error"),
+            "model": result.get("model", self.model),
+            "content": result.get("content", ""),
+            "error": result.get("error"),
+            "usage": result.get("usage", {}),
         }
+
+    def _parse_prompt(self, prompt_content: str) -> tuple[str, str]:
+        """
+        Parse markdown prompt into system and user parts.
+
+        Expected format:
+        ---
+        system: System instruction here
+        ---
+        user: User prompt here
+        ---
+
+        Or falls back to entire content as system prompt.
+        """
+        lines = prompt_content.split("\n")
+        system_parts = []
+        user_parts = []
+        current_section = None
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Check for section markers
+            if stripped.startswith("---"):
+                if current_section == "system":
+                    system_parts.append("\n".join(system_parts))
+                elif current_section == "user":
+                    user_parts.append("\n".join(user_parts))
+                system_parts = []
+                user_parts = []
+                current_section = None
+                continue
+
+            # Parse section headers
+            if stripped.startswith("system:"):
+                current_section = "system"
+                system_parts.append(stripped[8:].strip())
+                continue
+            elif stripped.startswith("user:"):
+                current_section = "user"
+                user_parts.append(stripped[6:].strip())
+                continue
+            elif stripped.startswith("#") and not system_parts and not user_parts:
+                # First heading - treat as system prompt
+                current_section = "system"
+                continue
+
+            # Add line to current section
+            if current_section == "system":
+                system_parts.append(line)
+            elif current_section == "user":
+                user_parts.append(line)
+            elif current_section is None:
+                # Before any section - treat as system
+                system_parts.append(line)
+
+        # Build final prompts
+        system = "\n".join(system_parts).strip() if system_parts else prompt_content
+        user = "\n".join(user_parts).strip() if user_parts else "Process the following input:"
+
+        return system, user
 
     async def execute_chain(self, prompts: list[dict], input_data: dict) -> list[dict]:
         """
-        Execute a chain of prompts.
+        Execute a chain of prompts sequentially.
 
         Args:
             prompts: List of prompts to execute
@@ -49,11 +132,24 @@ class PromptExecutor:
             list: Results from each prompt
         """
         results = []
-        current_data = input_data
+        current_data = input_data.copy()
 
-        for prompt in prompts:
-            result = await self.execute(prompt.get("content", ""), current_data)
-            results.append(result)
-            current_data = result
+        for i, prompt_data in enumerate(prompts):
+            content = prompt_data.get("content", "")
+            prompt_name = prompt_data.get("name", f"step_{i}")
+
+            logger.info(f"Chain step {i + 1}/{len(prompts)}: {prompt_name}")
+
+            result = await self.execute(content, current_data)
+            results.append({
+                "step": i + 1,
+                "name": prompt_name,
+                "result": result,
+            })
+
+            # Pass output as context for next step
+            if result.get("status") == "success" and result.get("content"):
+                current_data["previous_output"] = result["content"]
+                current_data[f"step_{i}_result"] = result["content"]
 
         return results

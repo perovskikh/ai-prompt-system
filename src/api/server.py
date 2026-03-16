@@ -18,6 +18,13 @@ import time
 from typing import Optional
 from functools import wraps
 
+# Load .env file for local development
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import executor for LLM integration
+from src.services.executor import PromptExecutor
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -167,6 +174,9 @@ class AuditLogger:
 # Global audit logger
 audit_logger = AuditLogger()
 
+# Global prompt executor with LLM integration
+prompt_executor = PromptExecutor()
+
 
 # Audit action constants
 class AuditActions:
@@ -231,16 +241,16 @@ def save_memory(project_id: str, data: dict) -> None:
 
 
 @mcp.tool
-def run_prompt(prompt_name: str, input_data: dict) -> dict:
+async def run_prompt(prompt_name: str, input_data: dict) -> dict:
     """
-    Execute a single prompt.
+    Execute a single prompt through LLM.
 
     Args:
         prompt_name: Name of the prompt to run (without .md)
         input_data: Input data for the prompt
 
     Returns:
-        dict: Execution result
+        dict: Execution result with generated content
     """
     try:
         prompt = load_prompt(prompt_name)
@@ -252,14 +262,17 @@ def run_prompt(prompt_name: str, input_data: dict) -> dict:
             details={"prompt_name": prompt_name, "input_keys": list(input_data.keys())}
         )
 
-        # In a real implementation, this would call an LLM
-        # For now, return the prompt structure
+        # Execute prompt through LLM
+        result = await prompt_executor.execute(prompt["content"], input_data)
+
         return {
-            "status": "success",
+            "status": result.get("status", "success"),
             "prompt": prompt_name,
-            "content": prompt["content"],
             "input": input_data,
-            "result": f"Prompt '{prompt_name}' loaded. Execute with LLM to get results."
+            "model": result.get("model", "claude-3-5-sonnet"),
+            "content": result.get("content", ""),
+            "error": result.get("error"),
+            "usage": result.get("usage", {}),
         }
     except FileNotFoundError as e:
         return {"status": "error", "error": str(e)}
@@ -269,29 +282,28 @@ def run_prompt(prompt_name: str, input_data: dict) -> dict:
 
 
 @mcp.tool
-def run_prompt_chain(idea: str, stages: list[str]) -> dict:
+async def run_prompt_chain(idea: str, stages: list[str]) -> dict:
     """
-    Execute full chain: idea → finish.
+    Execute full chain: idea → finish through LLM.
 
     Args:
         idea: The initial idea/concept
         stages: List of stages to execute (ideation, analysis, design, etc.)
 
     Returns:
-        dict: Chain execution results
+        dict: Chain execution results with generated content
     """
     results = []
-    current_result = idea
+    prompts_data = []
 
+    # Load all prompts in the chain
     for stage in stages:
         try:
             prompt = load_prompt(f"promt-{stage.lower()}")
-            results.append({
-                "stage": stage,
-                "status": "success",
-                "prompt": prompt["name"]
+            prompts_data.append({
+                "name": stage,
+                "content": prompt["content"]
             })
-            current_result = f"Processed through {stage}"
         except FileNotFoundError:
             results.append({
                 "stage": stage,
@@ -299,12 +311,26 @@ def run_prompt_chain(idea: str, stages: list[str]) -> dict:
                 "reason": f"Prompt for stage '{stage}' not found"
             })
 
+    # Execute chain through executor
+    chain_results = await prompt_executor.execute_chain(prompts_data, {"idea": idea})
+
+    # Format results
+    for cr in chain_results:
+        results.append({
+            "stage": cr["name"],
+            "status": cr["result"].get("status", "unknown"),
+            "content": cr["result"].get("content", ""),
+            "model": cr["result"].get("model"),
+        })
+
+    final_output = chain_results[-1]["result"].get("content", "") if chain_results else ""
+
     return {
         "status": "success",
         "idea": idea,
         "stages_executed": len([r for r in results if r["status"] == "success"]),
         "results": results,
-        "final_output": current_result
+        "final_output": final_output
     }
 
 
