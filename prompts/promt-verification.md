@@ -1,7 +1,7 @@
 ---
 name: promt-verification
 version: "3.4"
-type: CodeShift
+type: ai-prompt-system
 layer: Operations
 status: active
 tags: [verification, adr, queue]

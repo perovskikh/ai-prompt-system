@@ -1,7 +1,7 @@
 ---
 name: promt-index-update
 version: "2.6"
-type: CodeShift
+type: ai-prompt-system
 layer: Operations
 status: active
 tags: [index, adr, regeneration]

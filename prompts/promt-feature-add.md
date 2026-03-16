@@ -1,7 +1,7 @@
 ---
 name: promt-feature-add
 version: "1.5"
-type: CodeShift
+type: ai-prompt-system
 layer: Operations
 status: active
 tags: [feature, adr, context7]

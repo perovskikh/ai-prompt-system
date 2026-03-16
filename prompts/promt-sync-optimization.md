@@ -1,7 +1,7 @@
 ---
 name: promt-sync-optimization
 version: "1.8"
-type: CodeShift
+type: ai-prompt-system
 layer: Operations
 status: active
 tags: [sync, optimization, ci-ready]

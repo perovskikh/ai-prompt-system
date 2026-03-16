@@ -1,7 +1,7 @@
 ---
 name: promt-agent-init
 version: "1.0"
-type: CodeShift
+type: ai-prompt-system
 layer: Discovery
 status: active
 tags: [initialization, agent, meta]

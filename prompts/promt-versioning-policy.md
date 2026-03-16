@@ -1,7 +1,7 @@
 ---
 name: promt-versioning-policy
 version: "1.3"
-type: CodeShift
+type: ai-prompt-system
 layer: Meta
 status: active
 tags: [versioning, policy, semver, registry]
