@@ -275,4 +275,6 @@ def clean_context(current_tokens: int, threshold: int = 35000) -> dict:
 
 if __name__ == "__main__":
     logger.info("Starting AI Prompt System MCP Server...")
-    mcp.run()
+    logger.info("MCP Tools available: run_prompt, run_prompt_chain, list_prompts, get_project_memory, save_project_memory, adapt_to_project, clean_context")
+    # Use SSE transport for HTTP-based MCP
+    mcp.run(transport="sse", host="0.0.0.0", port=8000)
