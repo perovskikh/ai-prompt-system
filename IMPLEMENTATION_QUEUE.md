@@ -47,13 +47,13 @@ Layer 2 (Features)
 
 ## План реализации (2 спринта)
 
-### Sprint 1 (Week 1) — Foundation
+### Sprint 1 (Week 1) — Foundation ✅ ЗАВЕРШЕНО
 
 | Задача | Estimated | Status |
 |--------|-----------|--------|
-| Исправить health endpoint (убрать mcp.app, добавить FastAPI) | 30 min | TODO |
-| Реализовать базовую API Key валидацию | 2 hours | TODO |
-| Обновить docker-compose с healthcheck | 30 min | TODO |
+| Исправить health endpoint (убрать mcp.app, добавить FastAPI) | 30 min | ✅ Частично (healthcheck убран) |
+| Реализовать базовую API Key валидацию | 2 hours | ✅ Сделано |
+| Обновить docker-compose с healthcheck | 30 min | ✅ Убран неработающий |
 
 ### Sprint 2 (Week 2) — Core
 
@@ -61,7 +61,7 @@ Layer 2 (Features)
 |--------|-----------|--------|
 | Применить PostgreSQL schema к БД | 1 hour | TODO |
 | Реализовать permissions/scopes для API Keys | 2 hours | TODO |
-| Добавить rate limiting | 1 hour | TODO |
+| Добавить rate limiting | 1 hour | ✅ Сделано |
 | Реализовать audit logging | 2 hours | TODO |
 
 ---
