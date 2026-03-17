@@ -523,5 +523,15 @@ if __name__ == "__main__":
     logger.info("MCP Tools: run_prompt, run_prompt_chain, list_prompts, get_project_memory, save_project_memory, adapt_to_project, clean_context")
     logger.info(f"API Keys loaded: {len(api_keys._keys)} keys")
     logger.info("Rate limiting: enabled (60s window)")
-    # Use SSE transport for HTTP-based MCP
-    mcp.run(transport="sse", host="0.0.0.0", port=8000)
+
+    # Support both transport modes
+    # stdio: for Claude Code MCP (docker run --rm -i)
+    # sse: for HTTP-based MCP clients
+    transport = os.getenv("MCP_TRANSPORT", "sse")
+
+    if transport == "stdio":
+        # Claude Code uses stdio transport
+        mcp.run(transport="stdio")
+    else:
+        # Default: SSE transport for HTTP
+        mcp.run(transport="sse", host="0.0.0.0", port=8000)

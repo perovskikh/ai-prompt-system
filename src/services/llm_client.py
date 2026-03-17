@@ -14,42 +14,66 @@ import httpx
 logger = logging.getLogger(__name__)
 
 # Provider configurations (updated March 2026)
+# Each provider has its own API endpoint and uses its own API key
 PROVIDERS = {
-    "minimax": {
-        "base_url": "https://api.minimax.chat/v1",
-        "endpoint": "/text/chatcompletion_pro",
-        "model": "abab6.5s-chat",
-        "env_key": "MINIMAX_API_KEY",
-    },
-    "zai": {
-        "base_url": "https://api.z.ai/api",
-        "endpoint": "/anthropic/v1/messages",
-        "model": "claude-sonnet-4-6",  # Updated to 4.6
+    # === Z.ai (https://docs.z.ai) ===
+    # Z.ai provides access to GLM models via their API
+    # Endpoint: https://api.z.ai/api/coding/paas/v4
+    "glm-4-7": {
+        "base_url": "https://api.z.ai/api/coding/paas/v4",
+        "endpoint": "/chat/completions",
+        "model": "GLM-4.7",
         "env_key": "ZAI_API_KEY",
     },
+    "glm-4-5-air": {
+        "base_url": "https://api.z.ai/api/coding/paas/v4",
+        "endpoint": "/chat/completions",
+        "model": "GLM-4.5-Air",
+        "env_key": "ZAI_API_KEY",
+    },
+    # Z.ai also supports Anthropic models via /anthropic/v1/messages
+    "zai-claude": {
+        "base_url": "https://api.z.ai/api",
+        "endpoint": "/anthropic/v1/messages",
+        "model": "claude-sonnet-4-20250514",
+        "env_key": "ZAI_API_KEY",
+    },
+
+    # === MiniMax (https://platform.minimax.io) ===
+    "minimax": {
+        "base_url": "https://api.minimax.io/anthropic",
+        "endpoint": "/v1/messages",
+        "model": "MiniMax-M2.5",
+        "env_key": "MINIMAX_API_KEY",
+    },
+
+    # === DeepSeek (https://api-docs.deepseek.com) ===
+    "deepseek": {
+        "base_url": "https://api.deepseek.com",
+        "endpoint": "/v1/chat/completions",
+        "model": "deepseek-chat",
+        "env_key": "DEEPSEEK_API_KEY",
+    },
+    "deepseek-reasoner": {
+        "base_url": "https://api.deepseek.com",
+        "endpoint": "/v1/chat/completions",
+        "model": "deepseek-reasoner",
+        "env_key": "DEEPSEEK_API_KEY",
+    },
+
+    # === Anthropic Direct ===
     "anthropic": {
         "base_url": "https://api.anthropic.com",
         "endpoint": "/v1/messages",
-        "model": "claude-sonnet-4-6",  # Updated to 4.6 (March 2026)
+        "model": "claude-sonnet-4-20250514",
         "env_key": "ANTHROPIC_API_KEY",
     },
-    "openrouter": {
+
+    # === OpenRouter (https://openrouter.ai) - Free models ===
+    "hunter": {
         "base_url": "https://openrouter.ai/api/v1",
         "endpoint": "/chat/completions",
-        "model": "google/gemini-2.0-flash-exp",  # Updated model
-        "env_key": "OPENROUTER_API_KEY",
-    },
-    # Free models from OpenRouter
-    "openrouter_free": {
-        "base_url": "https://openrouter.ai/api/v1",
-        "endpoint": "/chat/completions",
-        "model": "minimax/minimax-m2.5:free",
-        "env_key": "OPENROUTER_API_KEY",
-    },
-    "glm": {
-        "base_url": "https://openrouter.ai/api/v1",
-        "endpoint": "/chat/completions",
-        "model": "z-ai/glm-4.5-air:free",
+        "model": "openrouter/hunter-alpha",
         "env_key": "OPENROUTER_API_KEY",
     },
 }
@@ -74,7 +98,7 @@ class LLMClient:
             provider = self._detect_provider()
 
         self.provider = provider
-        config = PROVIDERS.get(provider, PROVIDERS["zai"])
+        config = PROVIDERS.get(provider, PROVIDERS["hunter"])
 
         self.base_url = config["base_url"]
         self.endpoint = config["endpoint"]
@@ -88,32 +112,50 @@ class LLMClient:
             logger.warning(f"No API key for provider: {provider}")
 
     def _detect_provider(self) -> str:
-        """Detect best available provider."""
-        # Priority: Z.ai (has working Anthropic API), then OpenRouter, then Anthropic
+        """Detect best available provider based on API keys in .env."""
+        # Priority order (March 2026):
+        # 1. ZAI_API_KEY → GLM-4.7 (Z.ai, лучшая модель)
+        # 2. ZAI_API_KEY → GLM-4.5-Air (Z.ai, если 4.7 недоступна)
+        # 3. OPENROUTER_API_KEY → Hunter (free)
+        # 4. MINIMAX_API_KEY → MiniMax
+        # 5. DEEPSEEK_API_KEY → DeepSeek
+        # 6. ANTHROPIC_API_KEY → Anthropic (may have no credits)
+        # 7. Fallback: hunter (free via OpenRouter)
+
         if os.getenv("ZAI_API_KEY"):
-            return "zai"
+            return "glm-4-7"  # GLM-4.7 via Z.ai (лучшая)
+
         if os.getenv("OPENROUTER_API_KEY"):
-            return "openrouter"
-        if os.getenv("ANTHROPIC_API_KEY"):
-            return "anthropic"
+            return "hunter"  # Free: openrouter/hunter-alpha
+
         if os.getenv("MINIMAX_API_KEY"):
-            return "minimax"
-        return "zai"  # fallback to zai as primary
+            return "minimax"  # abab6.5s-chat
+
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return "deepseek"  # deepseek-chat
+
+        if os.getenv("ANTHROPIC_API_KEY"):
+            return "anthropic"  # claude-sonnet-4
+
+        return "hunter"  # Fallback to free
 
     def _get_headers(self) -> dict:
         """Get provider-specific headers."""
-        if self.provider == "anthropic":
+        if self.provider in ("anthropic", "minimax"):
+            # Anthropic direct and MiniMax (Anthropic-compatible) use x-api-key
             return {
                 "x-api-key": self.api_key,
                 "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json",
             }
-        elif self.provider == "zai":
+        elif self.provider == "zai-claude":
+            # Z.ai Claude uses Bearer (Anthropic-compatible)
             return {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
             }
         else:
+            # All others use Bearer (GLM, MiniMax, DeepSeek, OpenRouter)
             return {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -130,7 +172,16 @@ class LLMClient:
         temp = temperature or self.temperature
         tokens = max_tokens or self.max_tokens
 
-        if self.provider in ("anthropic", "zai"):
+        if self.provider == "anthropic":
+            # Anthropic format (no stream in payload)
+            return {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temp,
+                "max_tokens": tokens,
+            }
+        elif self.provider == "zai-claude":
+            # Z.ai Claude format (Anthropic-compatible)
             return {
                 "model": self.model,
                 "messages": messages,
@@ -138,7 +189,7 @@ class LLMClient:
                 "max_tokens": tokens,
             }
         else:
-            # OpenRouter, MiniMax use OpenAI-like format
+            # GLM, MiniMax, DeepSeek, OpenRouter use OpenAI-like format
             return {
                 "model": self.model,
                 "messages": messages,
@@ -149,7 +200,7 @@ class LLMClient:
 
     def _parse_response(self, response: dict) -> dict:
         """Parse provider-specific response format."""
-        if self.provider in ("anthropic", "zai"):
+        if self.provider in ("anthropic", "zai-claude", "minimax"):
             # Anthropic format: {"content": [...], "stop_reason": "..."}
             content = response.get("content", [])
             if content and isinstance(content, list):
@@ -161,7 +212,7 @@ class LLMClient:
                 "usage": response.get("usage", {}),
             }
         else:
-            # OpenRouter, MiniMax use OpenAI format
+            # OpenRouter, DeepSeek use OpenAI format
             return response
 
     async def chat(
@@ -273,8 +324,8 @@ class LLMClient:
             full_system = system_prompt
 
         # Some providers don't support system role - combine with first user message
-        if self.provider in ("zai",):
-            # For Z.ai: system becomes part of user message
+        if self.provider in ("zai-claude",):
+            # For Z.ai Claude: system becomes part of user message
             messages.append({
                 "role": "user",
                 "content": f"[System: {full_system}]\n\nUser request: {user_prompt}"

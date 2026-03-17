@@ -35,4 +35,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run MCP server
+# Default: stdio for Claude Code compatibility
+# Set MCP_TRANSPORT=sse for HTTP mode
+ENV MCP_TRANSPORT=stdio
 CMD ["python", "-m", "src.api.server"]

@@ -38,7 +38,17 @@
 | Cache/Events | Redis 7+ |
 | Validation | Pydantic v2+ |
 | Python | 3.11+ |
-| Transport | SSE (HTTP) |
+| Transport | stdio (Claude Code) / SSE (HTTP) |
+
+### LLM Провайдеры
+
+Система автоматически выбирает провайдер:
+
+| Провайдер | API Key | Модель | Статус |
+|-----------|---------|--------|--------|
+| **Z.ai** | ZAI_API_KEY | GLM-4.7 | ✅ Default |
+| MiniMax | MINIMAX_API_KEY | MiniMax-M2.5 | ✅ |
+| OpenRouter | OPENROUTER_API_KEY | hunter-alpha | ✅ Free |
 
 ---
 
@@ -108,18 +118,40 @@ print(f'Status: {result[\"status\"]}')
 
 ## Интеграция с Claude Code
 
-Добавь в `~/.claude/settings.json`:
+### Подключение (рекомендуется — локальный образ)
 
-```json
-{
-  "mcpServers": {
-    "ai-prompt-system": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "perovskikh/ai-prompt-system"]
-    }
-  }
-}
+```bash
+# Добавить MCP сервер
+claude mcp add ai-prompt-system -- docker run --rm -i ai-prompt-system-mcp-server:latest
 ```
+
+### Подключение (Docker Hub — после публикации)
+
+```bash
+claude mcp add ai-prompt-system -- docker run --rm -i perovskikh/ai-prompt-system
+```
+
+### Проверка
+
+```bash
+claude mcp list
+```
+
+Должно показать:
+```
+ai-prompt-system: ✓ Connected
+```
+
+### Доступные инструменты
+
+После подключения доступны 8 MCP инструментов:
+- `run_prompt` — выполнить промт
+- `run_prompt_chain` — выполнить цепочку
+- `list_prompts` — список промтов
+- `get_project_memory` / `save_project_memory` — память проекта
+- `adapt_to_project` — автоопределение стека
+- `clean_context` — очистка контекста
+- `get_available_mcp_tools` — список инструментов
 
 Подробнее: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
 
