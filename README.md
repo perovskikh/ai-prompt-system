@@ -121,16 +121,18 @@ print(f'Status: {result[\"status\"]}')
 ### Подключение (рекомендуется — локальный образ)
 
 ```bash
-# Добавить MCP сервер с монтированием .env и проекта
+# Добавить MCP сервер с монтированием .env, проекта и памяти
 claude mcp add ai-prompt-system -- docker run --rm -i \
   -v $PWD/.env:/app/.env \
   -v $PWD:/project \
+  -v $PWD/memory:/app/memory \
   ai-prompt-system-mcp-server:latest
 ```
 
 **Для чего нужно:**
 - `$PWD/.env` — API ключи для LLM
 - `$PWD:/project` — доступ к файлам проекта (для `adapt_to_project`)
+- `$PWD/memory` — сохранение памяти проекта между сессиями
 
 ### Подключение (Docker Hub — после публикации)
 
@@ -151,6 +153,7 @@ claude mcp add ai-prompt-system -- docker run --rm -i perovskikh/ai-prompt-syste
         "run", "--rm", "-i",
         "-v", "$PWD/.env:/app/.env",
         "-v", "$PWD:/project",
+        "-v", "$PWD/memory:/app/memory",
         "ai-prompt-system-mcp-server:latest"
       ]
     }
