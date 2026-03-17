@@ -80,7 +80,7 @@ python -m src.api.server
 
 ---
 
-## MCP Tools (8 инструментов)
+## MCP Tools (9 инструментов)
 
 После запуска доступны инструменты:
 
@@ -88,12 +88,57 @@ python -m src.api.server
 |------------|----------|
 | `run_prompt` | Выполнить один промт |
 | `run_prompt_chain` | Выполнить цепочку (ideation → finish) |
-| `list_prompts` | Список доступных промтов (28 штук) |
+| `list_prompts` | Список доступных промтов (29 штук) |
 | `get_project_memory` | Получить память проекта |
 | `save_project_memory` | Сохранить память проекта |
 | `adapt_to_project` | Автоопределение стека проекта |
 | `clean_context` | Очистка контекста при превышении лимита токенов |
+| `context7_lookup` | Получить Context7 library ID для документации |
 | `get_available_mcp_tools` | Список доступных инструментов |
+
+---
+
+## Context7 Integration
+
+Система интегрирована с **Context7 MCP** для получения актуальной документации.
+
+### Быстрый пример
+
+```python
+# Получить Context7 ID для библиотеки
+context7_lookup(library="fastapi", query="create API endpoint")
+# => library_id: /tiangolo/fastapi
+# => mcp call: mcp__context7__query_docs(library_id="/tiangolo/fastapi", query="create API endpoint")
+```
+
+### Поддерживаемые библиотеки
+
+| Библиотека | Context7 ID |
+|------------|-------------|
+| FastAPI | /tiangolo/fastapi |
+| Flask | /pallets/flask |
+| React | /facebook/react |
+| Next.js | /vercel/next.js |
+| Supabase | /supabase/supabase |
+| Prisma | /prisma/prisma |
+| Pydantic | /pydantic/pydantic |
+| Django | /django/django |
+
+### Использование с Claude Code
+
+```bash
+# Оба MCP должны быть подключены
+claude mcp add ai-prompt-system -- ...
+claude mcp add context7 -- ...
+```
+
+### Промт для генерации с Context7
+
+Новый промт `promt-context7-generation` автоматически:
+1. Определяет библиотеку из запроса
+2. Получает Context7 ID
+3. Запрашивает документацию
+4. Генерирует код по документации
 
 ---
 

@@ -332,6 +332,19 @@
         "rules",
         "project"
       ]
+    },
+    {
+      "name": "promt-context7-generation",
+      "file": "promt-context7-generation.md",
+      "version": "1.0",
+      "type": "Universal",
+      "layer": "Implementation",
+      "tags": [
+        "context7",
+        "documentation",
+        "code-generation",
+        "ai"
+      ]
     }
   ]
 }

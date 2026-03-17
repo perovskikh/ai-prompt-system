@@ -469,6 +469,87 @@ def adapt_to_project(project_path: str) -> dict:
 
 
 @mcp.tool
+def context7_lookup(library: str, query: str = None) -> dict:
+    """
+    Get Context7 library ID for documentation lookup.
+
+    This tool helps prepare the query for Context7 MCP. After calling this,
+    use the result with Context7 MCP: mcp__context7__query-docs.
+
+    Args:
+        library: Library/framework name (e.g., "fastapi", "react", "supabase")
+        query: Optional specific question about the library
+
+    Returns:
+        dict: Library ID and suggested query for Context7
+    """
+    # Map common library names to Context7 IDs
+    LIBRARY_MAP = {
+        "fastapi": "/tiangolo/fastapi",
+        "flask": "/pallets/flask",
+        "django": "/django/django",
+        "react": "/facebook/react",
+        "nextjs": "/vercel/next.js",
+        "vue": "/vuejs/core",
+        "angular": "/angular/angular",
+        "nodejs": "/nodejs/node",
+        "express": "/expressjs/express",
+        "supabase": "/supabase/supabase",
+        "prisma": "/prisma/prisma",
+        "postgresql": "/postgresql/postgresql",
+        "redis": "/redis/redis",
+        "docker": "/docker/cli",
+        "kubernetes": "/kubernetes/kubernetes",
+        "aws": "/awsdocs/aws-cloud-development-kit",
+        "gcp": "/googlecloudplatform/cloud-foundation-toolkit",
+        "terraform": "/hashicorp/terraform",
+        "pytest": "/pytest-dev/pytest",
+        "pydantic": "/pydantic/pydantic",
+        "sqlalchemy": "/sqlalchemy/sqlalchemy",
+        "requests": "/psf/requests",
+        "aiogram": "/aiogram/aiogram",
+        "telebot": "/pyTelegramBotAPI/pytelegrambotapi",
+        "anthropic": "/anthropics/anthropic-sdk-python",
+        "openai": "/openai/openai-python",
+    }
+
+    library_lower = library.lower()
+    context7_id = LIBRARY_MAP.get(library_lower)
+
+    # Build query
+    if query:
+        full_query = query
+    else:
+        full_query = f"How to use {library}?"
+
+    result = {
+        "status": "success",
+        "library": library,
+        "context7_id": context7_id,
+        "query": full_query,
+        "mcp_call": None
+    }
+
+    if context7_id:
+        result["mcp_call"] = {
+            "server": "context7",
+            "tool": "query_docs",
+            "library_id": context7_id,
+            "query": full_query
+        }
+        result["instructions"] = f"Use Context7 MCP: mcp__context7__query-docs with library_id={context7_id}, query=\"{full_query}\""
+    else:
+        result["instructions"] = f"Library '{library}' not in auto-map. Use Context7 MCP directly with library_id=\"/org/project\""
+        # Try to help with common patterns
+        if "python" in library_lower:
+            result["suggestion"] = "Try '/pallets/flask' for Flask or '/tiangolo/fastapi' for FastAPI"
+        elif "js" in library_lower or "javascript" in library_lower:
+            result["suggestion"] = "Try '/facebook/react' for React or '/vercel/next.js' for Next.js"
+
+    return result
+
+
+@mcp.tool
 def clean_context(current_tokens: int, threshold: int = 35000) -> dict:
     """
     Auto-clean context when token threshold is exceeded.
@@ -515,6 +596,7 @@ def get_available_mcp_tools() -> dict:
         {"name": "save_project_memory", "description": "Save project memory"},
         {"name": "adapt_to_project", "description": "Auto-detect stack and adapt prompts"},
         {"name": "clean_context", "description": "Clean context when token limit exceeded"},
+        {"name": "context7_lookup", "description": "Get Context7 library ID for documentation lookup"},
         {"name": "get_available_mcp_tools", "description": "Get this list of tools"}
     ]
 
@@ -530,7 +612,12 @@ def get_available_mcp_tools() -> dict:
         "version": "1.0.0",
         "tools": tools,
         "external_integrations": {
-            "context7": "Use Context7 MCP for documentation",
+            "context7": {
+                "description": "Use Context7 MCP for up-to-date documentation",
+                "tool": "context7_lookup",
+                "example": "context7_lookup('fastapi', 'how to create API endpoint')",
+                "mcp_call": "mcp__context7__query-docs"
+            },
             "github": "Use GitHub MCP for repository operations"
         }
     }
@@ -538,7 +625,7 @@ def get_available_mcp_tools() -> dict:
 
 if __name__ == "__main__":
     logger.info("Starting AI Prompt System MCP Server...")
-    logger.info("MCP Tools: run_prompt, run_prompt_chain, list_prompts, get_project_memory, save_project_memory, adapt_to_project, clean_context")
+    logger.info("MCP Tools: run_prompt, run_prompt_chain, list_prompts, get_project_memory, save_project_memory, adapt_to_project, clean_context, context7_lookup")
     logger.info(f"API Keys loaded: {len(api_keys._keys)} keys")
     logger.info("Rate limiting: enabled (60s window)")
 
