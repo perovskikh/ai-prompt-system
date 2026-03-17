@@ -20,7 +20,18 @@ from functools import wraps
 
 # Load .env file for local development
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+# Try to load .env from multiple locations
+env_paths = [
+    Path.cwd() / ".env",
+    Path(__file__).parent.parent / ".env",
+    Path("/app/.env"),
+]
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
 
 # Import executor for LLM integration
 from src.services.executor import PromptExecutor
@@ -174,8 +185,15 @@ class AuditLogger:
 # Global audit logger
 audit_logger = AuditLogger()
 
-# Global prompt executor with LLM integration
-prompt_executor = PromptExecutor()
+# Global prompt executor with LLM integration (lazy init)
+_prompt_executor: Optional[PromptExecutor] = None
+
+def get_prompt_executor() -> PromptExecutor:
+    """Get or create prompt executor."""
+    global _prompt_executor
+    if _prompt_executor is None:
+        _prompt_executor = PromptExecutor()
+    return _prompt_executor
 
 
 # Audit action constants
@@ -263,7 +281,7 @@ async def run_prompt(prompt_name: str, input_data: dict) -> dict:
         )
 
         # Execute prompt through LLM
-        result = await prompt_executor.execute(prompt["content"], input_data)
+        result = await get_prompt_executor().execute(prompt["content"], input_data)
 
         return {
             "status": result.get("status", "success"),
@@ -312,7 +330,7 @@ async def run_prompt_chain(idea: str, stages: list[str]) -> dict:
             })
 
     # Execute chain through executor
-    chain_results = await prompt_executor.execute_chain(prompts_data, {"idea": idea})
+    chain_results = await get_prompt_executor().execute_chain(prompts_data, {"idea": idea})
 
     # Format results
     for cr in chain_results:
