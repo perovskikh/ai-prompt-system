@@ -121,11 +121,16 @@ print(f'Status: {result[\"status\"]}')
 ### Подключение (рекомендуется — локальный образ)
 
 ```bash
-# Добавить MCP сервер (с монтированием .env для API ключей)
-claude mcp add ai-prompt-system -- docker run --rm -i -v $PWD/.env:/app/.env ai-prompt-system-mcp-server:latest
+# Добавить MCP сервер с монтированием .env и проекта
+claude mcp add ai-prompt-system -- docker run --rm -i \
+  -v $PWD/.env:/app/.env \
+  -v $PWD:/project \
+  ai-prompt-system-mcp-server:latest
 ```
 
-**Важно:** нужен `.env` файл с API ключами в проекте.
+**Для чего нужно:**
+- `$PWD/.env` — API ключи для LLM
+- `$PWD:/project` — доступ к файлам проекта (для `adapt_to_project`)
 
 ### Подключение (Docker Hub — после публикации)
 
@@ -142,7 +147,12 @@ claude mcp add ai-prompt-system -- docker run --rm -i perovskikh/ai-prompt-syste
   "mcpServers": {
     "ai-prompt-system": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-v", "$PWD/.env:/app/.env", "ai-prompt-system-mcp-server:latest"]
+      "args": [
+        "run", "--rm", "-i",
+        "-v", "$PWD/.env:/app/.env",
+        "-v", "$PWD:/project",
+        "ai-prompt-system-mcp-server:latest"
+      ]
     }
   }
 }
