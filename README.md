@@ -12,7 +12,19 @@
 | PostgreSQL | ✅ Healthy | 5432 |
 | Redis | ✅ Healthy | 6379 |
 
-**Последнее тестирование:** 2026-03-16 — ВСЕ ТЕСТЫ ПРОЙДЕНЫ ✅
+**Последнее тестирование:** 2026-03-19 — MiniMax-M2.5 ✅
+
+### ADR-002 Реализация
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | ✅ Complete | Tiered directories, baseline lock |
+| Phase 2 | ✅ Complete | TieredPromptLoader, cascade priority |
+| Phase 3 | ✅ Complete | 7 MPV stage prompts |
+| Phase 4 | ✅ Complete | Plugin Packs (k8s-pack, ci-cd-pack) |
+| Phase 5 | ✅ Complete | JWT Auth, RBAC, HTTPS Proxy |
+
+**Всего промтов:** 31 | **Plugin Packs:** 2
 
 ---
 
@@ -26,15 +38,13 @@
 - ✅ **MCP Server** — FastMCP (70% MCP серверов используют)
 - ✅ **Гибридное хранилище** — Redis (hot) + PostgreSQL (persistent)
 - ✅ **Audit Logging** — полное логирование всех операций
-
----
-
-## Рефакторинг (v1.0)
-
-**Удалено 18 CodeShift-специфичных промтов**, теперь:
-- ✅ **13 универсальных промтов** для любых проектов
-- ✅ **`use ai-prompts`** работает как универсальный маршрутизатор
-- ✅ **`init ai-promts`** адаптирует систему под новый стек
+- ✅ **Tiered Architecture** — CORE → UNIVERSAL → MPV_STAGES → PROJECTS
+- ✅ **Baseline Verification** — SHA256 контроль целостности промтов
+- ✅ **Cascade Priority** — приоритетная загрузка по tiers
+- ✅ **Plugin Packs** — k8s-pack, ci-cd-pack с триггерами
+- ✅ **JWT Authentication** — токены с refresh mechanism
+- ✅ **Tier-based RBAC** — роли: admin, developer, user, guest
+- ✅ **HTTPS Proxy** — Caddy с автоматическим HTTPS
 
 ---
 
@@ -42,7 +52,7 @@
 
 | Компонент | Выбор |
 |-----------|-------|
-| API Server | FastMCP 3.x |
+| API Server | FastMCP 3.1.1 |
 | Database | PostgreSQL 14+ |
 | Cache/Events | Redis 7+ |
 | Validation | Pydantic v2+ |
@@ -55,9 +65,9 @@
 
 | Провайдер | API Key | Модель | Статус |
 |-----------|---------|--------|--------|
-| **Z.ai** | ZAI_API_KEY | GLM-4.7 | ✅ Default |
-| MiniMax | MINIMAX_API_KEY | MiniMax-M2.5 | ✅ |
-| OpenRouter | OPENROUTER_API_KEY | hunter-alpha | ✅ Free |
+| **MiniMax** | MINIMAX_API_KEY | MiniMax-M2.5 | ✅ Default |
+| Z.ai | ZAI_API_KEY | GLM-4.7 | ⚠️ Rate Limited |
+| OpenRouter | OPENROUTER_API_KEY | claude-3-haiku | ✅ Free |
 
 ---
 
@@ -98,7 +108,7 @@ python -m src.api.server
 | `ai_prompts` | Универсальный маршрутизатор (пиши на естественном языке) |
 | `run_prompt` | Выполнить один промт |
 | `run_prompt_chain` | Выполнить цепочку (ideation → finish) |
-| `list_prompts` | Список доступных промтов (13 штук) |
+| `list_prompts` | Список доступных промтов (31 штука) |
 | `get_project_memory` | Получить память проекта |
 | `save_project_memory` | Сохранить память проекта |
 | `adapt_to_project` | Автоопределение стека проекта |
@@ -121,26 +131,36 @@ python -m src.api.server
 
 **Как работает:**
 1. Парсит намерение из запроса
-2. Автоматически выбирает нужный промт из 13
+2. Автоматически выбирает нужный промт
 3. Выполняет и возвращает результат
 
-**Поддерживаемые намерения:**
+---
 
-| Ключевое слово | Промт |
-|---------------|-------|
-| `feature`, `добавить`, `создать` | promt-feature-add |
-| `bug`, `исправить`, `фикс` | promt-bug-fix |
-| `refactor`, `рефакторинг` | promt-refactoring |
-| `test`, `тест` | promt-quality-test |
-| `quality` | promt-quality-test |
-| `security`, `безопасност` | promt-security-audit |
-| `audit` | promt-security-audit |
-| `adapt`, `адаптац` | promt-project-adaptation |
-| `onboard` | promt-onboarding |
-| `ci-cd`, `pipeline`, `deploy` | promt-ci-cd-pipeline |
-| `version`, `версион` | promt-versioning-policy |
-| `создай промт`, `new prompt`, `шаблон` | promt-prompt-creator |
-| `адаптируй`, `init ai-promts`, `новый проект` | promt-system-adapt |
+## Структура промтов
+
+Система использует **tiered архитектуру**:
+
+```
+prompts/
+├── core/                    # Baseline промты (SHA256 верификация)
+│   ├── system-prompts/     # Базовые системные промты
+│   └── registry.json       # Baseline lock: 1.0.0
+├── universal/              # Универсальные промты
+│   ├── ai_agent_prompts/   # Agent промты (31 штука)
+│   ├── mpv_stages/         # MVP Stage промты (7 штук)
+│   └── registry.json
+├── packs/                   # Plugin Packs
+│   ├── k8s-pack/           # Kubernetes операции
+│   └── ci-cd-pack/        # CI/CD pipelines
+└── registry.json           # Общий реестр (31 промт)
+```
+
+### Baseline Verification
+
+```bash
+# Проверить целостность baseline
+curl http://localhost:8001/verify-baseline
+```
 
 ---
 
@@ -154,60 +174,7 @@ python -m src.api.server
 # Получить Context7 ID для библиотеки
 context7_lookup(library="fastapi", query="create API endpoint")
 # => library_id: /tiangolo/fastapi
-# => mcp call: mcp__context7__query_docs(library_id="/tiangolo/fastapi", query="create API endpoint")
-```
-
-### Поддерживаемые библиотеки
-
-| Библиотека | Context7 ID |
-|------------|-------------|
-| FastAPI | /tiangolo/fastapi |
-| Flask | /pallets/flask |
-| React | /facebook/react |
-| Next.js | /vercel/next.js |
-| Supabase | /supabase/supabase |
-| Prisma | /prisma/prisma |
-| Pydantic | /pydantic/pydantic |
-| Django | /django/django |
-
-### Использование с Claude Code
-
-```bash
-# Оба MCP должны быть подключены
-claude mcp add ai-prompt-system -- ...
-claude mcp add context7 -- ...
-```
-
-### Промт для генерации с Context7
-
-Новый промт `promt-context7-generation` автоматически:
-1. Определяет библиотеку из запроса
-2. Получает Context7 ID
-3. Запрашивает документацию
-4. Генерирует код по документации
-
----
-
-## Тестирование
-
-```bash
-# Смонтировать .env и проект
-docker run --rm -i \
-  -v $PWD/.env:/app/.env \
-  -v $PWD:/project \
-  -v $PWD/memory:/app/memory \
-  ai-prompt-system-mcp-server:latest python -c "
-from src.api.server import list_prompts, run_prompt
-
-# Тест 1: Список промтов
-result = list_prompts()
-print(f'Prompts: {result[\"count\"]}')
-
-# Тест 2: Выполнение промта
-result = run_prompt('promt-verification', {'project': 'test', 'action': 'list'})
-print(f'Status: {result[\"status\"]}')
-print(f'Model: {result[\"model\"]}')
-"
+# => mcp call: mcp__context7__query_docs(library_id="/tiangolo/fastapi", query="...")
 ```
 
 ---
@@ -229,12 +196,6 @@ claude mcp add ai-prompt-system -- docker run --rm -i \
 - `$PWD/.env` — API ключи для LLM
 - `$PWD:/project` — доступ к файлам проекта (для `adapt_to_project`)
 - `$PWD/memory` — сохранение памяти проекта между сессиями
-
-### Подключение (Docker Hub — после публикации)
-
-```bash
-claude mcp add ai-prompt-system -- docker run --rm -i perovskikh/ai-prompt-system
-```
 
 ### Подключение через settings.json
 
@@ -270,65 +231,20 @@ claude mcp list
 ai-prompt-system: ✓ Connected
 ```
 
-### Доступные инструменты
+---
 
-После подключения доступны 8 MCP инструментов:
-- `run_prompt` — выполнить промт
-- `run_prompt_chain` — выполнить цепочку
-- `list_prompts` — список промтов
-- `get_project_memory` / `save_project_memory` — память проекта
-- `adapt_to_project` — автоопределение стека
-- `clean_context` — очистка контекста
-- `get_available_mcp_tools` — список инструментов
-
-### Примеры использования
-
-#### Определить стек проекта
+## Тестирование
 
 ```bash
-# Нужно примонтировать проект для доступа к файлам
-docker run --rm -i \
-  -v $PWD/.env:/app/.env \
-  -v $PWD:/project \
-  ai-prompt-system-mcp-server:latest \
-  python -c "from src.api.server import adapt_to_project; import json; print(json.dumps(adapt_to_project('/project'), indent=2))"
+# Все тесты
+pytest
+
+# С конкретным файлом
+pytest tests/test_storage.py
+
+# С покрытием
+pytest --cov=src
 ```
-
-#### Выполнить промт
-
-```bash
-docker run --rm -i \
-  -v $PWD/.env:/app/.env \
-  ai-prompt-system-mcp-server:latest \
-  python -c "from src.api.server import run_prompt; import asyncio; print(asyncio.run(run_prompt('promt-verification', {'project': 'test'})))"
-```
-
-#### Создать новый промт
-
-```bash
-docker run --rm -i \
-  -v $PWD/.env:/app/.env \
-  -v $PWD/prompts:/app/prompts \
-  ai-prompt-system-mcp-server:latest \
-  python -c "
-from src.api.server import ai_prompts
-import asyncio
-
-result = asyncio.run(ai_prompts(
-    request='Создай промт для автоматической генерации changelog из git commits',
-    context={}
-))
-print(result.get('content', '')[:500])
-"
-```
-
-**Или через `use ai-prompts`:**
-
-```
-"Создай промт для генерации changelog из git commits. use ai-prompts"
-```
-
-Подробнее: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
 
 ---
 
@@ -337,32 +253,27 @@ print(result.get('content', '')[:500])
 ```
 ai-prompt-system/
 ├── src/
-│   └── api/
-│       └── server.py         # FastMCP сервер (8 tools)
-├── prompts/                  # Markdown промты (13 файлов)
-│   └── README.md             # Гайд по использованию промтов
-├── database/
-│   └── schema.sql           # PostgreSQL схема (6 таблиц)
+│   ├── api/
+│   │   └── server.py         # FastMCP сервер (10 tools)
+│   ├── services/
+│   │   ├── executor.py       # PromptExecutor
+│   │   ├── llm_client.py     # LLM клиент (MultiMax, ZAI, OpenRouter)
+│   │   └── memory.py         # MemoryService
+│   ├── storage/
+│   │   ├── prompts.py        # Legacy storage
+│   │   └── prompts_v2.py    # Tiered storage с baseline
+│   └── middleware/
+│       └── baseline_verification.py
+├── prompts/                   # Markdown промты
+│   ├── core/                # Baseline промты
+│   ├── universal/           # Универсальные промты
+│   └── registry.json        # Реестр
+├── memory/                   # Память проектов
 ├── docker/
 │   ├── Dockerfile
-│   └── docker-compose.yml   # Full stack
-├── MCP_INTEGRATION.md       # Настройка Claude Code
-├── SYSTEM_ARCHITECTURE.md   # Полная схема системы
-└── TEST_RESULTS.md          # Результаты тестирования
+│   └── docker-compose.yml
+└── README.md
 ```
-
----
-
-## Prompts (13 файлов)
-
-| Категория | Количество |
-|-----------|------------|
-| Operations | verification, quality-test, sync-optimization |
-| Design | mvp-baseline-generator, adr-impl-planner |
-| Implementation | feature-add, bug-fix |
-| Meta | system-evolution, versioning-policy |
-
-Полный список: `list_prompts()` tool
 
 ---
 
@@ -388,8 +299,6 @@ API_KEYS__PROJECT_1=sk-project-1-key
 |------|----------|
 | [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md) | Полная схема архитектуры |
 | [MCP_INTEGRATION.md](MCP_INTEGRATION.md) | Подключение к Claude Code |
-| [TEST_RESULTS.md](TEST_RESULTS.md) | Результаты тестирования |
-| [prompts/README.md](prompts/README.md) | Гайд по промтам |
 
 ---
 

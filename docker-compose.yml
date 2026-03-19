@@ -19,8 +19,14 @@ services:
       - REDIS_CLUSTER_NODES=redis:6379
       # App config
       - API_KEYS__SYSTEM=sk-system-dev
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=DEBUG
+      - MCP_TRANSPORT=sse
+      - LLM_PROVIDER=minimax
+      # JWT Auth (Phase 5)
+      - JWT_SECRET=${JWT_SECRET:-}
+      - JWT_ENABLED=${JWT_ENABLED:-false}
     volumes:
+      - ./.env:/app/.env:ro
       - ./prompts:/app/prompts
       - ./memory:/app/memory
       - ./config:/app/config:ro
@@ -32,6 +38,20 @@ services:
     restart: unless-stopped
     # Healthcheck removed - MCP server doesn't expose /health
     # Use: curl -X POST http://localhost:8000/mcp/json-rpc -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+
+  # HTTPS Proxy (Caddy for automatic HTTPS)
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - mcp-server
+    restart: unless-stopped
 
   # PostgreSQL — persistent data (prompts, versions, projects, keys)
   db:
@@ -67,3 +87,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  caddy_data:

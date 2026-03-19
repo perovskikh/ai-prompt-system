@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Prompt System Plugin Pack",
+  "description": "Schema for plugin packs in AI Prompt System",
+  "type": "object",
+  "required": ["name", "version", "tier", "prompts", "triggers"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Pack name (kebab-case)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version"
+    },
+    "description": {
+      "type": "string",
+      "description": "Pack description"
+    },
+    "tier": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "Tier level (0=core, 1=universal, 2=mpv_stage, 3=projects)"
+    },
+    "author": {
+      "type": "string",
+      "description": "Pack author"
+    },
+    "mcp_requires": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Required MCP servers"
+    },
+    "prompts": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "List of prompt files in this pack"
+    },
+    "triggers": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Keyword to prompt mapping"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Required packs"
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}

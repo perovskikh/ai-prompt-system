@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-03-19",
+  "created_by": "System initialization",
+  "description": "Baseline lock for core prompts - currently empty, prompts in universal tier",
+  "checksums": {},
+  "verification_rules": {
+    "algorithm": "sha256",
+    "check_on_load": true,
+    "allow_override": false,
+    "integrity_check_interval": "3600s",
+    "action_on_tamper": "raise SecurityError",
+    "action_on_mismatch": "log warning and use cached version"
+  },
+  "metadata": {
+    "total_prompts": 0,
+    "tier": "core",
+    "immutable": true,
+    "overridable": false,
+    "note": "No core prompts defined yet - all prompts in universal tier"
+  }
+}

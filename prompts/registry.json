@@ -1,171 +1,338 @@
 {
-  "registry_version": "1.0",
-  "prompts": [
-    {
-      "name": "promt-feature-add",
-      "file": "promt-feature-add.md",
-      "version": "1.5",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "feature",
-        "context7"
-      ]
+  "version": "2.0.0",
+  "registry_version": "2.0",
+  "tier": "comprehensive",
+  "description": "Complete registry for AI Prompt System v2.0.0 with 66 prompts",
+  "created_at": "2026-03-18",
+  "prompts": {
+    "promt-ideation.md": {
+      "name": "promt-ideation.md",
+      "file": "universal/mpv_stages/promt-ideation.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-bug-fix",
-      "file": "promt-bug-fix.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "bug",
-        "fix",
-        "debugging"
-      ]
+    "promt-analysis.md": {
+      "name": "promt-analysis.md",
+      "file": "universal/mpv_stages/promt-analysis.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-refactoring",
-      "file": "promt-refactoring.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "refactoring",
-        "cleanup"
-      ]
+    "promt-design.md": {
+      "name": "promt-design.md",
+      "file": "universal/mpv_stages/promt-design.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-security-audit",
-      "file": "promt-security-audit.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "security",
-        "audit"
-      ]
+    "promt-implementation.md": {
+      "name": "promt-implementation.md",
+      "file": "universal/mpv_stages/promt-implementation.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-quality-test",
-      "file": "promt-quality-test.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "qa",
-        "testing",
-        "quality"
-      ]
+    "promt-testing.md": {
+      "name": "promt-testing.md",
+      "file": "universal/mpv_stages/promt-testing.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-ci-cd-pipeline",
-      "file": "promt-ci-cd-pipeline.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "ci-cd",
-        "pipeline",
-        "automation"
-      ]
+    "promt-debugging.md": {
+      "name": "promt-debugging.md",
+      "file": "universal/mpv_stages/promt-debugging.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-versioning-policy",
-      "file": "promt-versioning-policy.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Meta",
-      "tags": [
-        "versioning",
-        "policy",
-        "semver"
-      ]
+    "promt-finish.md": {
+      "name": "promt-finish.md",
+      "file": "universal/mpv_stages/promt-finish.md",
+      "version": "1.0",
+      "tier": "mpv_stage",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "dependencies": ["promt-debugging.md", "promt-testing.md", "promt-implementation.md", "promt-design.md", "promt-analysis.md", "promt-ideation.md"],
+      "created_at": "2026-03-18"
     },
-    {
-      "name": "promt-onboarding",
-      "file": "promt-onboarding.md",
-      "version": "1.2",
-      "type": "Universal",
-      "layer": "Operations",
-      "tags": [
-        "onboarding"
-      ]
-    },
-    {
-      "name": "promt-project-stack-dump",
-      "file": "promt-project-stack-dump.md",
-      "version": "1.1",
-      "type": "Universal",
-      "layer": "Discovery",
-      "tags": [
-        "universal",
-        "stack",
-        "dump"
-      ]
-    },
-    {
-      "name": "promt-mvp-baseline-generator-universal",
-      "file": "promt-mvp-baseline-generator-universal.md",
+    "promt-mvp-baseline-generator-universal.md": {
+      "name": "promt-mvp-baseline-generator-universal.md",
+      "file": "universal/ai_agent_prompts/promt-mvp-baseline-generator-universal.md",
       "version": "1.3",
-      "type": "Universal",
-      "layer": "Planning",
-      "tags": [
-        "universal",
-        "mvp",
-        "baseline"
-      ]
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Генерация MVP для любого стека технологий",
+      "tags": ["universal", "mvp", "baseline", "generator"]
     },
-    {
-      "name": "promt-project-adaptation",
-      "file": "promt-project-adaptation.md",
+    "promt-project-stack-dump.md": {
+      "name": "promt-project-stack-dump.md",
+      "file": "universal/ai_agent_prompts/promt-project-stack-dump.md",
       "version": "1.1",
-      "type": "Universal",
-      "layer": "Discovery",
-      "tags": [
-        "universal",
-        "adaptation",
-        "onboarding"
-      ]
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Быстрый анализ любого проекта и полный статус",
+      "tags": ["universal", "stack", "dump", "discovery"]
     },
-    {
-      "name": "promt-context7-generation",
-      "file": "promt-context7-generation.md",
-      "version": "1.0",
-      "type": "Universal",
-      "layer": "Implementation",
-      "tags": [
-        "context7",
-        "documentation",
-        "code-generation",
-        "ai"
-      ]
+    "promt-project-adaptation.md": {
+      "name": "promt-project-adaptation.md",
+      "file": "universal/ai_agent_prompts/promt-project-adaptation.md",
+      "version": "1.1",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Адаптация системы под конкретный проект",
+      "tags": ["universal", "adaptation", "onboarding", "auto-config"]
     },
-    {
-      "name": "promt-prompt-creator",
-      "file": "promt-prompt-creator.md",
+    "promt-context7-generation.md": {
+      "name": "promt-context7-generation.md",
+      "file": "universal/ai_agent_prompts/promt-context7-generation.md",
       "version": "1.0",
-      "type": "Universal",
-      "layer": "Meta",
-      "tags": [
-        "prompt-creator",
-        "meta",
-        "template",
-        "generation"
-      ]
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Генерация кода на основе Context7 документации",
+      "tags": ["universal", "context7", "documentation", "code-generation", "ai"]
     },
-    {
-      "name": "promt-system-adapt",
-      "file": "promt-system-adapt.md",
+    "promt-prompt-creator.md": {
+      "name": "promt-prompt-creator.md",
+      "file": "universal/ai_agent_prompts/promt-prompt-creator.md",
       "version": "1.0",
-      "type": "Universal",
-      "layer": "Discovery",
-      "tags": [
-        "adapt",
-        "initialization",
-        "auto-config",
-        "project-setup"
-      ]
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Создание новых промтов и мета-промтов",
+      "tags": ["universal", "prompt-creator", "meta", "template", "generation"]
+    },
+    "promt-system-adapt.md": {
+      "name": "promt-system-adapt.md",
+      "file": "universal/ai_agent_prompts/promt-system-adapt.md",
+      "version": "1.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Автоматическая адаптация и настройка для новых проектов",
+      "tags": ["universal", "adapt", "initialization", "auto-config", "project-setup"]
+    },
+    "promt-versioning-policy.md": {
+      "name": "promt-versioning-policy.md",
+      "file": "universal/ai_agent_prompts/promt-versioning-policy.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Политика версионирования promts (Semantic Versioning)",
+      "tags": ["universal", "versioning", "policy", "semver"]
+    },
+    "promt-verification.md": {
+      "name": "promt-verification.md",
+      "file": "universal/ai_agent_prompts/promt-verification.md",
+      "version": "3.4",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Верификация качества кода и ADR",
+      "tags": ["universal", "verification", "adr", "code", "quality", "self-verification"]
+    },
+    "promt-consolidation.md": {
+      "name": "promt-consolidation.md",
+      "file": "universal/ai_agent_prompts/promt-consolidation.md",
+      "version": "2.5",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Консолидация изменений и синхронизация ADR",
+      "tags": ["universal", "consolidation", "dedup", "sync", "adr"]
+    },
+    "promt-index-update.md": {
+      "name": "promt-index-update.md",
+      "file": "universal/ai_agent_prompts/promt-index-update.md",
+      "version": "2.6",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Обновление индексов и документации",
+      "tags": ["universal", "index", "sync", "documentation", "readme"]
+    },
+    "promt-readme-sync.md": {
+      "name": "promt-readme-sync.md",
+      "file": "universal/ai_agent_prompts/promt-readme-sync.md",
+      "version": "1.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Синхронизация README.md с registry.json",
+      "tags": ["universal", "sync", "readme", "documentation"]
+    },
+    "promt-project-rules-sync.md": {
+      "name": "promt-project-rules-sync.md",
+      "file": "universal/ai_agent_prompts/promt-project-rules-sync.md",
+      "version": "1.1",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Синхронизация project rules с системой",
+      "tags": ["universal", "rules", "sync", "project", "configuration"]
+    },
+    "promt-adr-implementation-planner.md": {
+      "name": "promt-adr-implementation-planner.md",
+      "file": "universal/ai_agent_prompts/promt-adr-implementation-planner.md",
+      "version": "2.3",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Планирование и трекинг ADR implementation",
+      "tags": ["universal", "adr", "planning", "implementation", "tracking"]
+    },
+    "promt-adr-template-migration.md": {
+      "name": "promt-adr-template-migration.md",
+      "file": "universal/ai_agent_prompts/promt-adr-template-migration.md",
+      "version": "1.4",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Миграция на новые форматы ADR template",
+      "tags": ["universal", "adr", "template", "migration", "standards"]
+    },
+    "promt-ci-cd-pipeline.md": {
+      "name": "promt-ci-cd-pipeline.md",
+      "file": "universal/ai_agent_prompts/promt-ci-cd-pipeline.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "CI/CD pipeline настройки и автоматизация",
+      "tags": ["universal", "ci-cd", "pipeline", "automation", "deployment"]
+    },
+    "promt-onboarding.md": {
+      "name": "promt-onboarding.md",
+      "file": "universal/ai_agent_prompts/promt-onboarding.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Onboarding новых разработчиков и пользователей",
+      "tags": ["universal", "onboarding", "team", "documentation", "getting-started"]
+    },
+    "promt-bug-fix.md": {
+      "name": "promt-bug-fix.md",
+      "file": "universal/ai_agent_prompts/promt-bug-fix.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Исправление багов и отладка кода",
+      "tags": ["universal", "bug", "fix", "debug", "troubleshooting"]
+    },
+    "promt-refactoring.md": {
+      "name": "promt-refactoring.md",
+      "file": "universal/ai_agent_prompts/promt-refactoring.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Рефакторинг кода для улучшения структуры",
+      "tags": ["universal", "refactoring", "cleanup", "optimization", "code-quality"]
+    },
+    "promt-security-audit.md": {
+      "name": "promt-security-audit.md",
+      "file": "universal/ai_agent_prompts/promt-security-audit.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Аудит безопасности и best practices",
+      "tags": ["universal", "security", "audit", "compliance", "best-practices"]
+    },
+    "promt-quality-test.md": {
+      "name": "promt-quality-test.md",
+      "file": "universal/ai_agent_prompts/promt-quality-test.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "QA и тестирование качества",
+      "tags": ["universal", "qa", "testing", "quality", "validation", "e2e"]
+    },
+    "promt-workflow-orchestration.md": {
+      "name": "promt-workflow-orchestration.md",
+      "file": "universal/ai_agent_prompts/promt-workflow-orchestration.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Оркестрация workflow и цепочка задач",
+      "tags": ["universal", "workflow", "orchestration", "pipeline", "automation"]
+    },
+    "promt-sync-report-export.md": {
+      "name": "promt-sync-report-export.md",
+      "file": "universal/ai_agent_prompts/promt-sync-report-export.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Экспорт отчётов синхронизации",
+      "tags": ["universal", "sync", "export", "report", "documentation"]
+    },
+    "promt-documentation-quality-compression.md": {
+      "name": "promt-documentation-quality-compression.md",
+      "file": "universal/ai_agent_prompts/deprecated/promt-documentation-compression-executor.md",
+      "version": "1.1",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Компрессия и качество документации",
+      "tags": ["universal", "documentation", "quality", "compression"]
+    },
+    "promt-system-evolution.md": {
+      "name": "promt-system-evolution.md",
+      "file": "universal/ai_agent_prompts/promt-system-evolution.md",
+      "version": "1.2",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-18",
+      "description": "Эволюция системы и roadmap",
+      "tags": ["universal", "evolution", "roadmap", "architecture", "planning"]
     }
-  ]
+  }
 }
