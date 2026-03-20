@@ -64,6 +64,12 @@ tags: [consolidation, dedup, sync, adr]
 Этот промпт управляется из единой точки: `docs/ai-agent-prompts/meta-promptness/meta-promt-adr-system-generator.md`.
 
 Обязательные инварианты синхронизации:
+
+5. **Автоматизация Slug-нормализации**
+   - Pre-commit hook проверяет duplicate topic slugs
+   - При создании нового ADR выбирать уникальный slug
+   - Slug форматируется в lowercase и kebab-case
+   - Предотвращает конфликты с существующими ADR
 - ADR идентифицируются по topic slug (первичный ключ)
 - Номера ADR нестабильны — topic slug используется для всех ссылок
 - При удалении ADR обновить все ссылки

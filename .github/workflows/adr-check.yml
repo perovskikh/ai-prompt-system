@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
     paths:
       - 'docs/explanation/adr/**'
+      - 'src/**'
 
 jobs:
   validate-adr:
@@ -23,15 +24,15 @@ jobs:
 
       - name: Check for conflicts
         if: failure()
-          run: |
-            echo "::error::ADR validation failed - conflicts detected"
-            exit 1
+        run: |
+          echo "::error::ADR validation failed - conflicts detected"
+          exit 1
 
       - name: Report results
         if: success()
-          run: |
-            echo "✅ ADR validation passed"
-            echo "Checked $(find docs/explanation/adr/*.md -name '*.md' | wc -l) ADR files"
+        run: |
+          echo "✅ ADR validation passed"
+          echo "Checked $(find docs/explanation/adr/*.md -name '*.md' | wc -l) ADR files"
 
   check-consistency:
     name: Check Registry Consistency
@@ -75,3 +76,369 @@ print('✅ Registry consistent')
           else
             echo "⚠️  Baseline lock missing"
             exit 1
+          fi
+
+  ai-bottleneck-analysis:
+    name: AI Bottleneck Analysis
+    needs: [validate-adr, check-consistency]
+    if: always() && (needs.validate-adr.result == 'success' || needs.check-consistency.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install ai-prompt-system
+        run: |
+          pip install -e .
+
+      - name: Analyze Bottlenecks via ai-prompts
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "🔍 Starting AI bottleneck analysis..."
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 | tr '\n' ',' | sed 's/,$//')
+          ADR_CONTEXT="${{ github.event.pull_request.title || 'Direct commit' }}"
+
+          echo "Changed files: $CHANGED_FILES"
+          echo "ADR context: $ADR_CONTEXT"
+
+          # Use ai_prompts router for bottleneck analysis
+          python3 -c "
+import asyncio
+import json
+from pathlib import Path
+
+async def analyze_bottlenecks():
+    from src.api.server import get_prompt_executor
+
+    executor = get_prompt_executor()
+
+    # Read bottleneck analysis reference
+    with open('docs/BOTTLENECKS_ANALYSIS.md', 'r') as f:
+        bottleneck_reference = f.read()
+
+    # Use ai_prompts router - it will automatically select appropriate prompt
+    analysis_request = f'''Проанализируй изменения кода для ADR и найди bottleneck-ы по производительности, архитектуре, интеграции и безопасности.
+
+Измененные файлы: {env['CHANGED_FILES']}
+ADR контекст: {env['ADR_CONTEXT']}
+
+Reference document: docs/BOTTLENECKS_ANALYSIS.md
+
+Требования:
+1. Проверь все категории bottleneck-ов из reference
+2. Приоритизируй по severity: critical > high > medium
+3. Для каждого bottleneck укажи file, line, issue, fix recommendation
+4. Ссылаись на конкретные секции docs/BOTTLENECKS_ANALYSIS.md
+
+Output в формате JSON с полями:
+- summary: общая статистика
+- bottlenecks: массив найденных проблем
+- recommendations: приоритезованный список исправлений'''
+
+    # Execute via ai_prompts router
+    result = await executor.execute(
+        Path('prompts/universal/ai_agent_prompts/promt-verification.md').read_text(),
+        {
+            'request': analysis_request,
+            'context': {
+                'changed_files': env['CHANGED_FILES'],
+                'adr_context': env['ADR_CONTEXT'],
+                'reference_doc': 'docs/BOTTLENECKS_ANALYSIS.md'
+            }
+        }
+    )
+
+    # Save analysis result
+    with open('bottleneck_analysis.json', 'w') as f:
+        f.write(result['content'])
+
+    print(result['content'])
+
+import os
+import sys
+asyncio.run(analyze_bottlenecks())
+" 2>&1 || echo "Analysis completed (may have errors)"
+
+      - name: Upload Bottleneck Analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottleneck-analysis
+          path: bottleneck_analysis.json
+
+      - name: Comment PR with Analysis
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            if (fs.existsSync('bottleneck_analysis.json')) {
+              try {
+                const analysis = JSON.parse(fs.readFileSync('bottleneck_analysis.json', 'utf8'));
+
+                const commentBody = `## 🔍 AI Bottleneck Analysis Report
+
+**Analysis Date**: new Date().toISOString()
+
+### Summary
+- **Total Bottlenecks**: \${analysis.summary?.total || 0}
+- **Critical**: \${analysis.summary?.critical || 0}
+- **High Priority**: \${analysis.summary?.high || 0}
+- **Medium Priority**: \${analysis.summary?.medium || 0}
+
+### Bottlenecks Found
+\${analysis.bottlenecks?.map(b => '- **\${b.category}**: \${b.issue} (Line \${b.line})').join('\\n') || '✅ No critical bottlenecks found'}
+
+### Recommendations
+\${analysis.recommendations?.map(r => '1. ' + r).join('\\n') || 'All changes look good!'}
+
+---
+*Analysis based on docs/BOTTLENECKS_ANALYSIS.md*`;
+
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: commentBody
+                });
+              } catch (error) {
+                console.log('Error posting comment:', error.message);
+              }
+            }
+
+  ai-auto-fix:
+    name: AI Auto-Fix Critical Bottlenecks
+    needs: [ai-bottleneck-analysis]
+    if: always() && needs.ai-bottleneck-analysis.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install ai-prompt-system
+        run: |
+          pip install -e .
+
+      - name: Download Bottleneck Analysis
+        uses: actions/download-artifact@v4
+        with:
+          name: bottleneck-analysis
+          path: ./
+
+      - name: Generate Auto-Fixes
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "🤖 Generating auto-fixes for critical bottlenecks..."
+
+          # Use ai_prompts router with specialized auto-fix prompt
+          python3 -c "
+import asyncio
+import json
+from pathlib import Path
+
+async def generate_fixes():
+    from src.api.server import get_prompt_executor
+
+    executor = get_prompt_executor()
+
+    # Load bottleneck analysis
+    with open('bottleneck_analysis.json', 'r') as f:
+        analysis_results = f.read()
+
+    # Use auto-fix prompt via ai_prompts router
+    fix_request = '''Исправь следующие bottleneck-ы и ошибки в коде:
+
+Analysis Results: [ANALYSIS]
+Code Changes: [CODE_CHANGES]
+Reference Document: docs/BOTTLENECKS_ANALYSIS.md
+
+Требования:
+1. Только critical severity может быть применено автоматически (can_auto_apply: true)
+2. High и medium severity требует review
+3. Обязательно предоставлять before_code и after_code для каждого fix
+4. Добавлять reasoning объясняющее почему это исправление необходимо
+5. Указывать bottleneck_category для группировки
+
+Output в формате JSON с полными исправлениями.'''
+
+    # Execute auto-fix prompt
+    result = await executor.execute(
+        Path('prompts/universal/ai_agent_prompts/promt-automated-code-fix.md').read_text(),
+        {
+            'analysis_results': analysis_results,
+            'code_changes': '',
+            'reference_doc': 'docs/BOTTLENECKS_ANALYSIS.md'
+        }
+    )
+
+    # Save fixes
+    with open('auto_fixes.json', 'w') as f:
+        f.write(result['content'])
+
+    print('🎯 Auto-fixes generated')
+    print(result['content'])
+
+asyncio.run(generate_fixes())
+" 2>&1 || echo "Auto-fixes generated (may have errors)"
+
+      - name: Upload Auto-Fixes
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-fixes
+          path: auto_fixes.json
+
+      - name: Apply Critical Fixes
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔧 Applying critical fixes..."
+
+          python3 -c "
+import json
+from pathlib import Path
+
+# Load fixes
+with open('auto_fixes.json', 'r') as f:
+    fixes_data = json.load(f)
+
+summary = fixes_data.get('summary', {})
+fixes = fixes_data.get('fixes', [])
+
+print(f'📊 Auto-Fix Summary:')
+print(f'  Critical: {summary.get(\"critical\", 0)}')
+print(f'  High: {summary.get(\"high\", 0)}')
+print(f'  Medium: {summary.get(\"medium\", 0)}')
+print(f'  Auto-Applied: {summary.get(\"auto_applied\", 0)}')
+
+# Apply critical fixes that can be auto-applied
+critical_fixes = [f for f in fixes if f.get('severity') == 'critical' and f.get('can_auto_apply', False)]
+
+if critical_fixes:
+    print(f'🔨 Applying {len(critical_fixes)} critical fixes...')
+    for fix in critical_fixes:
+        file_path = Path(fix['file'])
+        if file_path.exists():
+            # Apply the fix
+            with open(file_path, 'r') as f:
+                content = f.read()
+
+            # Replace before with after
+            if fix.get('before_code') and fix.get('after_code'):
+                if fix['before_code'] in content:
+                    new_content = content.replace(fix['before_code'], fix['after_code'], 1)
+                    with open(file_path, 'w') as f:
+                        f.write(new_content)
+                    print(f'✅ Applied fix to {fix[\"file\"]}:{fix[\"line\"]} - {fix[\"issue\"]}')
+                else:
+                    print(f'⚠️  Could not find before_code in {fix[\"file\"]}:{fix[\"line\"]}')
+            else:
+                print(f'⚠️  No before_code/after_code for {fix[\"file\"]}:{fix[\"line\"]}')
+        else:
+            print(f'⚠️  File not found: {fix[\"file\"]}')
+else:
+    print('ℹ️  No critical fixes to auto-apply')
+
+# Save applied fixes summary
+with open('applied_fixes.json', 'w') as f:
+    json.dump({
+        'critical_applied': len(critical_fixes),
+        'requires_review': len([f for f in fixes if f.get('severity') in ['high', 'medium']]),
+        'total_fixes': len(fixes)
+    }, f, indent=2)
+"
+
+      - name: Comment Auto-Fix Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            if (fs.existsSync('applied_fixes.json')) {
+              const applied = JSON.parse(fs.readFileSync('applied_fixes.json', 'utf8'));
+
+              const commentBody = `## 🤖 AI Auto-Fix Results
+
+**Applied \${applied.critical_applied} critical fixes automatically**
+**\${applied.requires_review} fixes require manual review**
+**Total fixes analyzed**: \${applied.total_fixes}
+
+### Auto-Applied Fixes
+✅ Critical bottlenecks have been automatically applied to the code.
+
+### Next Steps
+- Review the changes
+- High and medium priority fixes are available in the artifacts
+- Consider updating docs/BOTTLENECKS_ANALYSIS.md after merge
+
+---
+*Auto-fixes based on docs/BOTTLENECKS_ANALYSIS.md*`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            }
+
+      - name: Commit Auto-Fixes
+        if: github.event_name == 'pull_request'
+        run: |
+          # Check if any fixes were applied
+          if [ -s "applied_fixes.json" ]; then
+            python3 -c "
+import json
+
+with open('applied_fixes.json', 'r') as f:
+    applied = json.load(f)
+
+if applied.get('critical_applied', 0) > 0:
+    print(f'📝 Committing {applied[\"critical_applied\"]} auto-applied fixes...')
+else:
+    print('ℹ️  No fixes to commit')
+"
+
+          git config --global user.name "AI Auto-Fix Bot"
+          git config --global user.email "ai-fix@automated.local"
+
+          # Add changes
+          git add -A
+          git status
+
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            git commit -m "🤖 Auto-fix: Applied critical bottleneck fixes via AI analysis
+
+- Reference: docs/BOTTLENECKS_ANALYSIS.md
+- Applied via: promt-automated-code-fix.md
+- CI/CD Pipeline: .github/workflows/adr-check.yml"
+            git push
+          else
+            echo "ℹ️  No changes to commit"
+          fi
+
+      - name: Upload Applied Fixes Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: applied-fixes-report
+          path: applied_fixes.json

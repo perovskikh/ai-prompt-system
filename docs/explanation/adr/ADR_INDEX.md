@@ -48,6 +48,13 @@
 
 ### Related Documentation
 
+- **[Bottleneck Analysis](../BOTTLENECKS_ANALYSIS.md)** - Comprehensive analysis of performance, architecture, integration, and security bottlenecks in AI-Prompt System (2026-03-20)
+- **[Auto-Fix Implementation](../AUTO_FIX_IMPLEMENTATION.md)** - Complete guide to AI-powered automatic bottleneck detection and code fixing (2026-03-20)
+- **[System Testing Report](../SYSTEM_TESTING_REPORT.md)** - Full testing validation and simulation results for AI Auto-Fix System (2026-03-20)
+- **[ADR Consolidation Plan](../ADR_CONSOLIDATION_PLAN.md)** - Complete plan to consolidate duplicate ADR-002 files and verify ADR integrity (2026-03-20)
+- **[Technical Debt Tracker](../TECHNICAL_DEBT_TRACKER.md)** - Comprehensive tracker of 14 technical debt items found in BOTTLENECKS_ANALYSIS.md (2026-03-20)
+- **[ADR Consolidation Procedures](../ai-agent-prompts/promt-consolidation.md)** - Guidelines for consolidating duplicate ADRs and maintaining system consistency
+
 - [MPV Specification](../how-to/MPV.md) - 7-Stage Pipeline & Tier Architecture
 - [Legacy Architecture Analysis](../how-to/analysis-CodeShift-promt.md) - Historical reference (legacy naming)
 - [Architecture Visualization](../how-to/universal_mcp_architecture_mermaid_style.svg) - Visual Diagram

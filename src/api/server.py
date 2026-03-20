@@ -34,7 +34,7 @@ env_paths = [
 ]
 for env_path in env_paths:
     if env_path.exists():
-        load_dotenv(env_path)
+        load_dotenv(env_path, override=True)  # Force override existing env vars
         break
 
 # Import executor for LLM integration
@@ -65,12 +65,150 @@ from src.services.redis_rate_limiter import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# JWT Configuration
+JWT_ENABLED = os.getenv("JWT_ENABLED", "false").lower() == "true"
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
+
+# Import JWT service if enabled
+_jwt_service = None
+if JWT_ENABLED:
+    from src.middleware.jwt_auth import JWTService, get_jwt_service as _get_jwt_service
+    _jwt_service = _get_jwt_service()
+    logger.info("JWT authentication enabled")
+
 # Create MCP server
 mcp = FastMCP("AI Prompt System")
+
+
+# JWT Auth Tools (only if JWT_ENABLED)
+if JWT_ENABLED:
+    @mcp.tool()
+    def generate_jwt_token(
+        subject: str,
+        role: str = "user",
+        expiry_hours: int = 24
+    ) -> dict:
+        """
+        Generate a JWT access token for API authentication.
+
+        Args:
+            subject: User or project identifier
+            role: Role (admin, developer, user)
+            expiry_hours: Token expiration in hours (default 24)
+        """
+        global _jwt_service
+
+        if not JWT_ENABLED:
+            return {"status": "error", "error": "JWT authentication is not enabled"}
+
+        try:
+            token = _jwt_service.generate_token(
+                subject=subject,
+                role=role,
+                expiry=expiry_hours * 3600
+            )
+            return {
+                "status": "success",
+                "token": token,
+                "subject": subject,
+                "role": role,
+                "expires_in": expiry_hours * 3600
+            }
+        except Exception as e:
+            logger.error(f"JWT token generation error: {e}")
+            return {"status": "error", "error": str(e)}
+
+    @mcp.tool()
+    def validate_jwt_token(token: str) -> dict:
+        """
+        Validate a JWT token and return its payload.
+
+        Args:
+            token: JWT token to validate
+        """
+        global _jwt_service
+
+        if not JWT_ENABLED:
+            return {"status": "error", "error": "JWT authentication is not enabled"}
+
+        if not token:
+            return {"status": "error", "error": "Token is required"}
+
+        payload = _jwt_service.validate_token(token)
+
+        if payload:
+            return {
+                "status": "success",
+                "valid": True,
+                "subject": payload.sub,
+                "role": payload.role,
+                "permissions": payload.permissions,
+                "tier_access": payload.tier_access,
+                "expires_at": payload.exp
+            }
+        else:
+            return {
+                "status": "success",
+                "valid": False,
+                "error": "Invalid or expired token"
+            }
+
+    @mcp.tool()
+    def revoke_jwt_token(token: str) -> dict:
+        """
+        Revoke a JWT token.
+
+        Args:
+            token: JWT token to revoke
+        """
+        global _jwt_service
+
+        if not JWT_ENABLED:
+            return {"status": "error", "error": "JWT authentication is not enabled"}
+
+        if _jwt_service.revoke_token(token):
+            return {"status": "success", "message": "Token revoked"}
+        return {"status": "error", "error": "Failed to revoke token"}
 
 # Configuration
 PROMPTS_DIR = Path(__file__).parent.parent.parent / "prompts"
 MEMORY_DIR = Path(__file__).parent.parent.parent / "memory"
+
+
+def validate_auth(api_key: str = None, jwt_token: str = None) -> tuple[bool, Optional[dict]]:
+    """
+    Validate authentication via API key or JWT token.
+
+    Returns:
+        tuple: (is_valid, auth_data)
+    """
+    global _jwt_service
+
+    # Check JWT first if enabled
+    if JWT_ENABLED and jwt_token:
+        if _jwt_service:
+            payload = _jwt_service.validate_token(jwt_token)
+            if payload:
+                return True, {
+                    "type": "jwt",
+                    "subject": payload.sub,
+                    "role": payload.role,
+                    "permissions": payload.permissions,
+                    "tier_access": payload.tier_access
+                }
+
+    # Check API key
+    if api_key:
+        # Will be validated by APIKeyManager later
+        return True, {"type": "api_key", "key": api_key}
+
+    # No auth provided
+    if JWT_ENABLED:
+        return False, {"error": "Authentication required (JWT or API key)"}
+
+    # JWT not enabled, allow API key auth later
+    return True, None
+
 
 # API Keys Configuration
 class APIKeyManager:

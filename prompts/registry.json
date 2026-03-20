@@ -522,7 +522,26 @@
       "immutable": false,
       "overridable": true,
       "created_at": "2026-03-18"
+    },
+    "promt-automated-code-fix.md": {
+      "name": "promt-automated-code-fix.md",
+      "file": "universal/ai_agent_prompts/promt-automated-code-fix.md",
+      "version": "1.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "created_at": "2026-03-20",
+      "description": "Автоматическое исправление bottleneck-ов и ошибок в коде",
+      "tags": [
+        "universal",
+        "auto-fix",
+        "bottlenecks",
+        "ci-cd",
+        "automation",
+        "security",
+        "performance"
+      ]
     }
   },
-  "total_prompts": 34
+  "total_prompts": 35
 }

@@ -673,29 +673,29 @@ cp src/storage/prompts.py.backup src/storage/prompts.py
 - [ ] End-to-end MPV pipeline tested
 
 ### Phase 3: Loader Refactoring (Week 3-4)
-- [ ] `TieredPromptLoader` class implemented with Depends() pattern
-- [ ] Lazy loading with lru_cache implemented (target: -60% tokens)
-- [ ] Cascade override works (projects → universal/mpv_stages → universal/ai_agent_prompts → core)
-- [ ] Baseline lock verification working
-- [ ] Immutable flag enforcement active
-- [ ] AI Agent Prompts preserved in correct location
+- [x] `TieredPromptLoader` class implemented with Depends() pattern
+- [x] Lazy loading with lru_cache implemented (target: -60% tokens)
+- [x] Cascade override works (projects → universal/mpv_stages → universal/ai_agent_prompts → core)
+- [x] Baseline lock verification working
+- [x] Immutable flag enforcement active
+- [x] AI Agent Prompts preserved in correct location
 - [ ] All unit tests passing (>90% coverage)
 - [ ] Performance benchmarks met (<5ms overhead, -60-64% tokens)
 
 ### Phase 4: Plugin Packs (Week 5-6)
-- [ ] `pack.json` Pydantic schema designed
-- [ ] `PackLoader` class implemented
-- [ ] 2 official plugin packs
-- [ ] Pack management tools working
-- [ ] Pack system documented
+- [x] `pack.json` Pydantic schema designed
+- [x] `PackLoader` class implemented
+- [x] 2 official plugin packs (k8s-pack, ci-cd-pack)
+- [x] Pack management tools working
+- [x] Pack system documented
 
 ### Phase 5: HTTPS & Security (Week 7-8)
-- [ ] HTTPS MCP endpoint deployed
-- [ ] JWT authentication working
-- [ ] Tier-based RBAC implemented
-- [ ] Enhanced audit logging active
+- [x] HTTPS MCP endpoint deployed (via Caddy)
+- [x] JWT authentication working
+- [x] Tier-based RBAC implemented
+- [x] Enhanced audit logging active
 - [ ] Security audit passing (all mitigations in place)
-- [ ] No "CodeShift" references in codebase
+- [x] No "CodeShift" references in codebase
 
 ### Overall
 - [ ] All unit tests passing (>90% coverage)
