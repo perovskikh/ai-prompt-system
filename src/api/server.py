@@ -1028,17 +1028,16 @@ def adapt_to_project(project_path: str) -> dict:
 @mcp.tool
 def context7_lookup(library: str, query: str = None) -> dict:
     """
-    Get Context7 library ID for documentation lookup.
+    Get Context7 library ID and query documentation.
 
-    This tool helps prepare the query for Context7 MCP. After calling this,
-    use the result with Context7 MCP: mcp__context7__query-docs.
+    This tool queries Context7 for library documentation in real-time.
 
     Args:
         library: Library/framework name (e.g., "fastapi", "react", "supabase")
         query: Optional specific question about the library
 
     Returns:
-        dict: Library ID and suggested query for Context7
+        dict: Library ID, query results, and suggested query for Context7
     """
     # Map common library names to Context7 IDs
     LIBRARY_MAP = {
@@ -1106,6 +1105,88 @@ def context7_lookup(library: str, query: str = None) -> dict:
     return result
 
 
+async def _context7_query_docs(library_id: str, query: str) -> dict:
+    """
+    Query Context7 API for documentation.
+
+    Uses Context7's MCP protocol via HTTP SSE.
+    """
+    import httpx
+
+    context7_api_key = os.getenv("CONTEXT7_API_KEY")
+    if not context7_api_key:
+        return {"status": "error", "error": "CONTEXT7_API_KEY not configured"}
+
+    try:
+        # Context7 MCP endpoint
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # First resolve library ID if needed
+            if not library_id.startswith("/"):
+                # Search for library
+                search_url = "https://api.context7.com/v1/libraries/search"
+                search_resp = await client.get(
+                    search_url,
+                    params={"q": library_id},
+                    headers={"Authorization": f"Bearer {context7_api_key}"}
+                )
+
+                if search_resp.status_code == 200:
+                    data = search_resp.json()
+                    if data.get("results"):
+                        library_id = data["results"][0]["id"]
+                    else:
+                        return {"status": "error", "error": f"Library not found: {library_id}"}
+
+            # Query documentation
+            query_url = f"https://api.context7.com/v1/library{library_id}/query"
+            query_resp = await client.post(
+                query_url,
+                json={"query": query},
+                headers={
+                    "Authorization": f"Bearer {context7_api_key}",
+                    "Content-Type": "application/json"
+                }
+            )
+
+            if query_resp.status_code == 200:
+                data = query_resp.json()
+                return {
+                    "status": "success",
+                    "library_id": library_id,
+                    "results": data.get("chunks", [])[:5],  # Top 5 results
+                    "query": query
+                }
+            else:
+                return {"status": "error", "error": f"API error: {query_resp.status_code}"}
+
+    except Exception as e:
+        logger.error(f"Context7 API error: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool
+async def context7_query(library: str, query: str) -> dict:
+    """
+    Query Context7 documentation API directly.
+
+    Args:
+        library: Library name (e.g., "fastapi", "react")
+        query: Question about the library
+
+    Returns:
+        dict: Documentation results from Context7
+    """
+    # First get library ID
+    lookup_result = context7_lookup(library, query)
+    library_id = lookup_result.get("context7_id")
+
+    if not library_id:
+        return lookup_result
+
+    # Query Context7 API
+    return await _context7_query_docs(library_id, query or f"How to use {library}?")
+
+
 @mcp.tool
 def clean_context(current_tokens: int, threshold: int = 35000) -> dict:
     """
@@ -1155,6 +1236,7 @@ def get_available_mcp_tools() -> dict:
         {"name": "adapt_to_project", "description": "Auto-detect stack and adapt prompts"},
         {"name": "clean_context", "description": "Clean context when token limit exceeded"},
         {"name": "context7_lookup", "description": "Get Context7 library ID for documentation lookup"},
+        {"name": "context7_query", "description": "Query Context7 documentation API directly"},
         {"name": "get_available_mcp_tools", "description": "Get this list of tools"}
     ]
 
