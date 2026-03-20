@@ -689,11 +689,16 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "улучши": "promt-refactoring",
             "модернизируй": "promt-refactoring",
             "перепиши": "promt-refactoring",
+            "оптимизируй": "promt-refactoring",
+            "упрости": "promt-refactoring",
+            "упрости код": "promt-refactoring",
 
             # Security
             "security": "promt-security-audit",
             "безопасност": "promt-security-audit",
             "audit": "promt-security-audit",
+            "аудит": "promt-security-audit",
+            "уязвимост": "promt-security-audit",
 
             # Testing
             "test": "promt-quality-test",
@@ -714,6 +719,8 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "pipeline": "promt-ci-cd-pipeline",
             "deploy": "promt-ci-cd-pipeline",
             "деплой": "promt-ci-cd-pipeline",
+            "github": "promt-ci-cd-pipeline",
+            "github actions": "promt-ci-cd-pipeline",
 
             # Versioning
             "version": "promt-versioning-policy",
