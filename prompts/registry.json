@@ -211,7 +211,7 @@
     },
     "promt-consolidation.md": {
       "name": "promt-consolidation.md",
-      "file": "universal/ai_agent_prompts/promt-consolidation.md",
+      "file": "universal/ai_agent_prompts/promt-consolidation-simple.md",
       "version": "2.5",
       "tier": "universal",
       "immutable": false,
