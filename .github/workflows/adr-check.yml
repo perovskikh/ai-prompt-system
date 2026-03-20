@@ -1,0 +1,77 @@
+name: ADR Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/explanation/adr/**'
+
+jobs:
+  validate-adr:
+    name: Validate ADR Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Run ADR Validator
+        run: python3 .pre-commit-config.yaml
+
+      - name: Check for conflicts
+        if: failure()
+          run: |
+            echo "::error::ADR validation failed - conflicts detected"
+            exit 1
+
+      - name: Report results
+        if: success()
+          run: |
+            echo "✅ ADR validation passed"
+            echo "Checked $(find docs/explanation/adr/*.md -name '*.md' | wc -l) ADR files"
+
+  check-consistency:
+    name: Check Registry Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Verify Registry
+        run: python3 -c "
+import json
+from pathlib import Path
+
+registry = json.load(open('docs/explanation/adr/ADR_INDEX.md'))
+prompts = registry.get('prompts', {})
+
+print(f'Registry: {len(prompts)} prompts')
+
+# Check files exist
+prompt_files = list(Path('prompts').rglob('*.md'))
+actual_files = [f for f in prompt_files if '.baseline-lock' not in str(f)]
+
+# Find prompts in registry but not files
+missing = set(registry.keys()) - set(actual_files)
+
+if missing:
+    print(f'⚠️  {len(missing)} prompts in registry but files missing')
+    exit(1)
+
+print('✅ Registry consistent')
+"
+
+      - name: Verify baseline lock
+        run: |
+          if [ -f "prompts/core/.promt-baseline-lock" ]; then
+            echo "✅ Baseline lock exists"
+          else
+            echo "⚠️  Baseline lock missing"
+            exit 1
