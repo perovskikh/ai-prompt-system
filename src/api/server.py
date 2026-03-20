@@ -548,6 +548,76 @@ def get_memory(project_id: str) -> dict:
     return {"memory": [], "context": {}}
 
 
+async def _llm_route_intent(request: str) -> Optional[str]:
+    """
+    LLM-based intent routing (Siri-like).
+
+    Uses LLM to classify user request and select appropriate prompt.
+    """
+    # Prompt for LLM to classify intent
+    # Build intent options string for LLM
+    intent_options = """promt-feature-add: добавить функцию, компонент, создать что-то новое
+promt-bug-fix: исправить баг, найти ошибку, починить
+promt-refactoring: рефакторинг, улучшить код, переписать
+promt-security-audit: безопасность, уязвимости, аудит
+promt-quality-test: тесты, проверка качества, unit тесты
+promt-ci-cd-pipeline: деплой, CI/CD, pipeline,部署
+promt-project-adaptation: адаптация, подключить проект
+promt-prompt-creator: создать промт, новый шаблон
+promt-system-adapt: инициализация, новый проект
+promt-versioning-policy: версионирование"""
+
+    classification_prompt = f"""Классифицируй запрос пользователя.
+
+Доступные промты:
+{intent_options}
+
+Запрос: "{request}"
+
+Ответь ТОЛЬКО названием промта (например: promt-feature-add).
+Если не уверен - выбери наиболее подходящий."""
+
+    try:
+        from src.services.executor import PromptExecutor
+        executor = PromptExecutor()
+
+        # Use minimal settings for fast classification
+        result = await executor.execute(
+            classification_prompt,
+            {"request": request, "context": {}}
+        )
+
+        if result.get("status") == "success":
+            content = str(result.get("content", ""))
+
+            # Handle MiniMax response format (dict with 'thinking' key)
+            try:
+                if content.startswith("{"):
+                    import ast
+                    content_dict = ast.literal_eval(content)
+                    if isinstance(content_dict, dict) and "thinking" in content_dict:
+                        content = content_dict["thinking"]
+            except:
+                pass
+
+            # Extract prompt name from response
+            content_lower = content.lower()
+            for prompt_name in [
+                "promt-feature-add", "promt-bug-fix", "promt-refactoring",
+                "promt-security-audit", "promt-quality-test", "promt-ci-cd-pipeline",
+                "promt-project-adaptation", "promt-prompt-creator",
+                "promt-system-adapt", "promt-versioning-policy"
+            ]:
+                if prompt_name in content_lower:
+                    logger.info(f"LLM routed '{request}' -> {prompt_name}")
+                    return prompt_name
+
+        return None
+    except Exception as e:
+        logger.error(f"LLM routing failed: {e}")
+        return None
+
+
 def save_memory(project_id: str, data: dict) -> None:
     """Save project memory."""
     project_dir = MEMORY_DIR / project_id
@@ -593,16 +663,22 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "добавить": "promt-feature-add",
             "добавить функт": "promt-feature-add",
             "создать": "promt-feature-add",
+            "создай": "promt-feature-add",
             "создать компонент": "promt-feature-add",
             "new feature": "promt-feature-add",
             "add feature": "promt-feature-add",
+            "фича": "promt-feature-add",
+            "новую возможность": "promt-feature-add",
 
             # Bug/fix operations
             "bug": "promt-bug-fix",
             "исправить": "promt-bug-fix",
+            "исправь": "promt-bug-fix",
+            "исправить ошибку": "promt-bug-fix",
             "фикс": "promt-bug-fix",
             "fix bug": "promt-bug-fix",
             "баг": "promt-bug-fix",
+            "ошибку": "promt-bug-fix",
             "найди": "promt-bug-fix",
 
             # Refactoring
@@ -610,6 +686,9 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "рефакторинг": "promt-refactoring",
             "улучшить код": "promt-refactoring",
             "улучшить": "promt-refactoring",
+            "улучши": "promt-refactoring",
+            "модернизируй": "promt-refactoring",
+            "перепиши": "promt-refactoring",
 
             # Security
             "security": "promt-security-audit",
@@ -658,7 +737,7 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
 
         request_lower = request.lower()
 
-        # Find matching prompt
+        # Find matching prompt via keywords
         selected_prompt = None
         matched_keyword = None
         for keyword, prompt_name in INTENT_MAP.items():
@@ -666,6 +745,13 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
                 selected_prompt = prompt_name
                 matched_keyword = keyword
                 break
+
+        # LLM-based routing fallback (when keyword fails)
+        if not selected_prompt or matched_keyword == "default":
+            llm_selected = await _llm_route_intent(request)
+            if llm_selected:
+                selected_prompt = llm_selected
+                matched_keyword = "llm"
 
         # Default to feature-add if no match
         if not selected_prompt:
