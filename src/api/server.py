@@ -330,14 +330,13 @@ async def get_redis_client() -> redis.Redis:
     """Get or create Redis client."""
     global _redis_client
     if _redis_client is None:
-        redis_host = os.getenv("REDIS_HOST", "localhost")
-        redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        redis_db = int(os.getenv("REDIS_DB", "0"))
+        # Use REDIS_URL from docker-compose or fallback
+        redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
         redis_password = os.getenv("REDIS_PASSWORD", None)
 
         try:
             _redis_client = await redis.from_url(
-                f"redis://{redis_host}:{redis_port}/{redis_db}",
+                redis_url,
                 password=redis_password,
                 encoding="utf-8",
                 decode_responses=True,
@@ -345,7 +344,8 @@ async def get_redis_client() -> redis.Redis:
                 socket_connect_timeout=5,
                 socket_timeout=5,
             )
-            logger.info(f"Redis client connected to {redis_host}:{redis_port}")
+            await _redis_client.ping()
+            logger.info(f"Redis client connected to {redis_url}")
         except Exception as e:
             logger.warning(f"Redis connection failed, falling back to in-memory rate limiting: {e}")
             _redis_client = None
