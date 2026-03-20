@@ -1219,6 +1219,54 @@ def clean_context(current_tokens: int, threshold: int = 35000) -> dict:
 
 
 @mcp.tool
+def execute_bash(command: str, cwd: str = "/app") -> dict:
+    """
+    Execute a bash command and return output.
+
+    This tool enables the documentation agent to execute shell commands
+    for analysis tasks.
+
+    Args:
+        command: Shell command to execute
+        cwd: Working directory (default: /app)
+
+    Returns:
+        dict: Command output and status
+    """
+    import subprocess
+    import os
+
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        return {
+            "status": "success",
+            "command": command,
+            "exit_code": result.returncode,
+            "stdout": result.stdout[:5000] if result.stdout else "",
+            "stderr": result.stderr[:1000] if result.stderr else "",
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error",
+            "command": command,
+            "error": "Command timed out after 30 seconds"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "command": command,
+            "error": str(e)
+        }
+
+
+@mcp.tool
 def get_available_mcp_tools() -> dict:
     """
     Get list of available MCP tools in this server.

@@ -556,6 +556,22 @@
         "2026"
       ],
       "created_at": "2026-02-25"
+    },
+    "promt-documentation-agent-2026.md": {
+      "name": "promt-documentation-agent-2026.md",
+      "file": "universal/ai_agent_prompts/promt-documentation-agent-2026.md",
+      "version": "1.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "documentation",
+        "agent",
+        "loop",
+        "diataxis",
+        "audit"
+      ],
+      "created_at": "2026-03-20"
     }
   },
   "total_prompts": 35
