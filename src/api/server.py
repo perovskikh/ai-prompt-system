@@ -588,9 +588,11 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
 
         # Intent keywords mapping to prompts
         INTENT_MAP = {
-            # Code operations
+            # Code operations (feature-add)
             "feature": "promt-feature-add",
+            "добавить": "promt-feature-add",
             "добавить функт": "promt-feature-add",
+            "создать": "promt-feature-add",
             "создать компонент": "promt-feature-add",
             "new feature": "promt-feature-add",
             "add feature": "promt-feature-add",
@@ -601,11 +603,13 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "фикс": "promt-bug-fix",
             "fix bug": "promt-bug-fix",
             "баг": "promt-bug-fix",
+            "найди": "promt-bug-fix",
 
             # Refactoring
             "refactor": "promt-refactoring",
             "рефакторинг": "promt-refactoring",
             "улучшить код": "promt-refactoring",
+            "улучшить": "promt-refactoring",
 
             # Security
             "security": "promt-security-audit",
@@ -615,17 +619,22 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             # Testing
             "test": "promt-quality-test",
             "тест": "promt-quality-test",
+            "напиши тест": "promt-quality-test",
             "quality": "promt-quality-test",
+            "проверь": "promt-quality-test",
 
             # Onboarding/adaptation
             "adapt": "promt-project-adaptation",
             "адаптац": "promt-project-adaptation",
             "onboard": "promt-onboarding",
+            "подключи": "promt-project-adaptation",
 
             # CI/CD
             "ci-cd": "promt-ci-cd-pipeline",
+            "ci cd": "promt-ci-cd-pipeline",
             "pipeline": "promt-ci-cd-pipeline",
             "deploy": "promt-ci-cd-pipeline",
+            "деплой": "promt-ci-cd-pipeline",
 
             # Versioning
             "version": "promt-versioning-policy",
