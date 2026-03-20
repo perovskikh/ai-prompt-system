@@ -740,6 +740,17 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
             "инициализация ai-promts": "promt-system-adapt",
             "new project": "promt-system-adapt",
             "новый проект": "promt-system-adapt",
+
+            # Bottleneck analysis & research (2026 docs standards)
+            "bottleneck": "promt-bottleneck-analysis-2026",
+            "узкие места": "promt-bottleneck-analysis-2026",
+            "узких мест": "promt-bottleneck-analysis-2026",
+            "всех узких": "promt-bottleneck-analysis-2026",
+            "исследование": "promt-bottleneck-analysis-2026",
+            "иследуй": "promt-bottleneck-analysis-2026",
+            "проведи исследование": "promt-bottleneck-analysis-2026",
+            "проанализируй": "promt-documentation-refactoring-standards-2026",
+            "аудит": "promt-documentation-refactoring-standards-2026",
         }
 
         request_lower = request.lower()

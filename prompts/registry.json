@@ -545,7 +545,7 @@
     "promt-documentation-refactoring-standards-2026.md": {
       "name": "promt-documentation-refactoring-standards-2026.md",
       "file": "universal/ai_agent_prompts/promt-documentation-refactoring-standards-2026.md",
-      "version": "1.2",
+      "version": "1.7",
       "tier": "universal",
       "immutable": false,
       "overridable": true,
@@ -553,9 +553,14 @@
         "documentation",
         "refactoring",
         "diataxis",
-        "2026"
+        "2026",
+        "bottleneck",
+        "audit",
+        "living-docs"
       ],
-      "created_at": "2026-02-25"
+      "created_at": "2026-03-20",
+      "description": "Аудит документации по Diátaxis стандартам 2026 + Living Documentation",
+      "keywords": ["bottleneck", "узкие места", "анализ", "аудит", "исследование"]
     },
     "promt-documentation-agent-2026.md": {
       "name": "promt-documentation-agent-2026.md",
@@ -572,7 +577,25 @@
         "audit"
       ],
       "created_at": "2026-03-20"
+    },
+    "promt-bottleneck-analysis-2026.md": {
+      "name": "promt-bottleneck-analysis-2026.md",
+      "file": "universal/ai_agent_prompts/promt-bottleneck-analysis-2026.md",
+      "version": "1.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "bottleneck",
+        "analysis",
+        "2026",
+        "diataxis",
+        "living-docs",
+        "audit"
+      ],
+      "created_at": "2026-03-20",
+      "description": "Исследование bottleneck с генерацией документации по стандартам 2026"
     }
   },
-  "total_prompts": 35
+  "total_prompts": 36
 }
