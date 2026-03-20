@@ -8,6 +8,7 @@ Provides async client for executing prompts through various LLM providers.
 import os
 import json
 import logging
+import asyncio
 from typing import Optional, AsyncGenerator
 import httpx
 
@@ -73,7 +74,7 @@ PROVIDERS = {
     "hunter": {
         "base_url": "https://openrouter.ai/api/v1",
         "endpoint": "/chat/completions",
-        "model": "openrouter/hunter-alpha",
+        "model": "anthropic/claude-3-haiku",
         "env_key": "OPENROUTER_API_KEY",
     },
 }
@@ -241,14 +242,32 @@ class LLMClient:
         payload = self._build_payload(messages, temperature, max_tokens, stream)
         endpoint = f"{self.base_url}{self.endpoint}"
 
+        logger.info(f"LLM Request: provider={self.provider}, model={self.model}, endpoint={endpoint}")
+
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
                 if stream:
                     return self._stream_response(client, endpoint, headers, payload)
                 else:
-                    response = await client.post(endpoint, headers=headers, json=payload)
-                    response.raise_for_status()
-                    return self._parse_response(response.json())
+                    # Retry logic for rate limiting (429)
+                    max_retries = 3
+                    retry_delay = 2.0
+                    for attempt in range(max_retries):
+                        response = await client.post(endpoint, headers=headers, json=payload)
+
+                        if response.status_code == 429:
+                            # Rate limited - retry with exponential backoff
+                            if attempt < max_retries - 1:
+                                wait_time = retry_delay * (2 ** attempt)
+                                logger.warning(f"Rate limited (429), retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                                await asyncio.sleep(wait_time)
+                                continue
+                            else:
+                                logger.error(f"Rate limit exceeded after {max_retries} retries")
+                                return {"error": "Rate limit exceeded", "details": "Too many requests to LLM provider", "retry_after": response.headers.get("retry-after")}
+
+                        response.raise_for_status()
+                        return self._parse_response(response.json())
         except httpx.HTTPStatusError as e:
             logger.error(f"API error: {e.response.status_code} - {e.response.text}")
             return {"error": f"API error: {e.response.status_code}", "details": e.response.text[:200]}
@@ -376,4 +395,14 @@ class LLMClient:
 
 def get_llm_client() -> LLMClient:
     """Get configured LLM client from environment."""
-    return LLMClient()
+    import os
+    from dotenv import load_dotenv
+
+    # Try to load from common .env locations
+    load_dotenv("/app/.env")
+    load_dotenv()  # Try current directory
+
+    provider = os.getenv("LLM_PROVIDER", "auto")
+    model = os.getenv("LLM_MODEL", None)  # Optional model override
+
+    return LLMClient(provider=provider, model=model)

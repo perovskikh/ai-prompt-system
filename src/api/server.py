@@ -17,10 +17,14 @@ import os
 import time
 from typing import Optional
 from functools import wraps
+import asyncio
 
 # Load .env file for local development
 from dotenv import load_dotenv
 from pathlib import Path
+
+# Redis imports for distributed rate limiting
+import redis.asyncio as redis
 
 # Try to load .env from multiple locations
 env_paths = [
@@ -36,6 +40,27 @@ for env_path in env_paths:
 # Import executor for LLM integration
 from src.services.executor import PromptExecutor
 
+# Import v2 storage and middleware
+from src.storage.prompts_v2 import (
+    PromptStorageV2,
+    get_storage,
+    get_prompt,
+    get_tier_prompts,
+    verify_baseline,
+    PromptTier
+)
+from src.middleware import (
+    verify_baseline_on_startup,
+    configure_baseline_verification
+)
+
+# Import distributed rate limiting
+from src.services.redis_rate_limiter import (
+    create_redis_rate_limiter,
+    LimitConfig,
+    DistributedRateLimiter
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,11 +74,11 @@ MEMORY_DIR = Path(__file__).parent.parent.parent / "memory"
 
 # API Keys Configuration
 class APIKeyManager:
-    """Manages API keys with rate limiting."""
+    """Manages API keys with distributed rate limiting via Redis."""
 
-    def __init__(self):
+    def __init__(self, redis_client=None):
         self._keys = {}
-        self._rate_limits = {}  # {key: (count, timestamp)}
+        self._rate_limit_client = redis_client  # Distributed rate limiter
         self._load_keys()
 
     def _load_keys(self):
@@ -75,42 +100,73 @@ class APIKeyManager:
                     "rate_limit": 100
                 }
 
-    def validate_key(self, api_key: str) -> Optional[dict]:
-        """Validate API key and return key data."""
+    async def validate_key(self, api_key: str, ip_address: str = "unknown") -> tuple[Optional[dict], dict]:
+        """
+        Validate API key and return key data with rate limit info.
+
+        Returns:
+            tuple: (key_data or None, rate_limit_info dict)
+        """
         if not api_key:
-            return None
+            return None, {}
 
         # Check key exists
         key_data = self._keys.get(api_key)
         if not key_data:
-            return None
+            return None, {}
 
-        # Check rate limit
-        if not self._check_rate_limit(api_key, key_data.get("rate_limit", 100)):
-            return None
+        # Check rate limit using distributed limiter
+        rate_limit_config = LimitConfig(
+            limit=key_data.get("rate_limit", 100),
+            window_seconds=60,
+            burst=10,
+            enabled=True,
+            grace_period=60,
+            distributed=True
+        )
 
-        return key_data
+        if self._rate_limit_client:
+            allowed, limit_info = await self._rate_limit_client.check_rate_limit(
+                api_key=api_key,
+                ip_address=ip_address,
+                limit_config=rate_limit_config
+            )
 
-    def _check_rate_limit(self, api_key: str, limit: int) -> bool:
-        """Check if request is within rate limit."""
+            if not allowed:
+                return None, limit_info
+        else:
+            # Fallback to in-memory if Redis not available
+            if not self._check_rate_limit_memory(api_key, key_data.get("rate_limit", 100)):
+                return None, {}
+
+        return key_data, {}
+
+    def _check_rate_limit_memory(self, api_key: str, limit: int) -> bool:
+        """
+        Fallback in-memory rate limiter when Redis is unavailable.
+        This maintains backward compatibility.
+        """
         now = time.time()
-        key_data = self._rate_limits.get(api_key)
+        if not hasattr(self, '_memory_rate_limits'):
+            self._memory_rate_limits = {}
+
+        key_data = self._memory_rate_limits.get(api_key)
 
         if key_data is None:
-            self._rate_limits[api_key] = [1, now]
+            self._memory_rate_limits[api_key] = [1, now]
             return True
 
         count, timestamp = key_data
         # Reset if more than 60 seconds passed
         if now - timestamp > 60:
-            self._rate_limits[api_key] = [1, now]
+            self._memory_rate_limits[api_key] = [1, now]
             return True
 
         # Check limit
         if count >= limit:
             return False
 
-        self._rate_limits[api_key] = [count + 1, timestamp]
+        self._memory_rate_limits[api_key] = [count + 1, timestamp]
         return True
 
     def check_permission(self, api_key: str, permission: str) -> bool:
@@ -127,7 +183,57 @@ class APIKeyManager:
         return permission in permissions
 
 
-# Global API key manager
+# Global Redis client and distributed rate limiter
+_redis_client: Optional[redis.Redis] = None
+_distributed_rate_limiter: Optional[DistributedRateLimiter] = None
+
+
+async def get_redis_client() -> redis.Redis:
+    """Get or create Redis client."""
+    global _redis_client
+    if _redis_client is None:
+        redis_host = os.getenv("REDIS_HOST", "localhost")
+        redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        redis_db = int(os.getenv("REDIS_DB", "0"))
+        redis_password = os.getenv("REDIS_PASSWORD", None)
+
+        try:
+            _redis_client = await redis.from_url(
+                f"redis://{redis_host}:{redis_port}/{redis_db}",
+                password=redis_password,
+                encoding="utf-8",
+                decode_responses=True,
+                max_connections=100,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+            )
+            logger.info(f"Redis client connected to {redis_host}:{redis_port}")
+        except Exception as e:
+            logger.warning(f"Redis connection failed, falling back to in-memory rate limiting: {e}")
+            _redis_client = None
+
+    return _redis_client
+
+
+async def get_distributed_rate_limiter() -> Optional[DistributedRateLimiter]:
+    """Get or create distributed rate limiter."""
+    global _distributed_rate_limiter
+    if _distributed_rate_limiter is None:
+        redis_client = await get_redis_client()
+        if redis_client:
+            try:
+                _distributed_rate_limiter = DistributedRateLimiter(redis_client)
+                logger.info("Distributed rate limiter initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize distributed rate limiter: {e}")
+                _distributed_rate_limiter = None
+        else:
+            logger.warning("Redis not available, using in-memory rate limiting")
+
+    return _distributed_rate_limiter
+
+
+# Global API key manager (will be initialized with Redis in startup)
 api_keys = APIKeyManager()
 
 
@@ -221,17 +327,71 @@ def require_api_key(func):
 
 
 def load_prompt(prompt_name: str) -> dict:
-    """Load a prompt from the prompts directory."""
+    """Load a prompt from the prompts directory using registry."""
+    # First try direct path
     prompt_file = PROMPTS_DIR / f"{prompt_name}.md"
-    if not prompt_file.exists():
-        raise FileNotFoundError(f"Prompt not found: {prompt_name}")
+    if prompt_file.exists():
+        content = prompt_file.read_text()
+        return {
+            "name": prompt_name,
+            "file": prompt_file.name,
+            "content": content
+        }
 
-    content = prompt_file.read_text()
-    return {
-        "name": prompt_name,
-        "file": prompt_file.name,
-        "content": content
-    }
+    # Try with .md extension already present
+    if prompt_name.endswith(".md"):
+        prompt_file = PROMPTS_DIR / prompt_name
+        if prompt_file.exists():
+            content = prompt_file.read_text()
+            return {
+                "name": prompt_name,
+                "file": prompt_file.name,
+                "content": content
+            }
+
+    # Use registry to find the correct path
+    registry = load_registry()
+    prompts = registry.get("prompts", {})
+
+    # Try exact match first
+    if prompt_name in prompts:
+        file_path = prompts[prompt_name].get("file", prompt_name)
+        prompt_file = PROMPTS_DIR / file_path
+        if prompt_file.exists():
+            content = prompt_file.read_text()
+            return {
+                "name": prompt_name,
+                "file": file_path,
+                "content": content
+            }
+
+    # Try with .md extension added
+    prompt_with_md = f"{prompt_name}.md"
+    if prompt_with_md in prompts:
+        file_path = prompts[prompt_with_md].get("file", prompt_with_md)
+        prompt_file = PROMPTS_DIR / file_path
+        if prompt_file.exists():
+            content = prompt_file.read_text()
+            return {
+                "name": prompt_name,
+                "file": file_path,
+                "content": content
+            }
+
+    # Try removing .md extension if present
+    prompt_without_md = prompt_name[:-3] if prompt_name.endswith(".md") else prompt_name
+    if prompt_without_md in prompts:
+        file_path = prompts[prompt_without_md].get("file", prompt_without_md)
+        prompt_file = PROMPTS_DIR / file_path
+        if prompt_file.exists():
+            content = prompt_file.read_text()
+            return {
+                "name": prompt_name,
+                "file": file_path,
+                "content": content
+            }
+
+    raise FileNotFoundError(f"Prompt not found: {prompt_name}")
 
 
 def load_registry() -> dict:
@@ -433,16 +593,12 @@ async def run_prompt(prompt_name: str, input_data: dict) -> dict:
     """
     try:
         prompt = load_prompt(prompt_name)
-
-        # Audit logging
-        audit_logger.log(
-            action=AuditActions.PROMPT_EXECUTED,
-            resource_type="prompt",
-            details={"prompt_name": prompt_name, "input_keys": list(input_data.keys())}
-        )
+        logger.info(f"Running prompt: {prompt_name}")
 
         # Execute prompt through LLM
-        result = await get_prompt_executor().execute(prompt["content"], input_data)
+        executor = get_prompt_executor()
+        logger.info(f"Executor provider: {executor.client.provider}, model: {executor.client.model}")
+        result = await executor.execute(prompt["content"], input_data)
 
         return {
             "status": result.get("status", "success"),
@@ -785,12 +941,85 @@ def get_available_mcp_tools() -> dict:
     }
 
 
-if __name__ == "__main__":
+async def startup_event():
+    """Startup event handler."""
     logger.info("Starting AI Prompt System MCP Server...")
+
+    # Initialize distributed rate limiting
+    try:
+        rate_limiter = await get_distributed_rate_limiter()
+        if rate_limiter:
+            global api_keys
+            api_keys = APIKeyManager(redis_client=rate_limiter.redis)
+            logger.info("Distributed rate limiting enabled (Redis-based)")
+        else:
+            logger.info("Rate limiting: enabled (in-memory fallback)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize distributed rate limiting: {e}")
+        logger.info("Rate limiting: enabled (in-memory fallback)")
+
+    # Configure baseline verification
+    verify_enabled = os.getenv("BASELINE_VERIFY_ENABLED", "true").lower() == "true"
+    verify_on_load = os.getenv("BASELINE_VERIFY_ON_LOAD", "false").lower() == "true"
+    action_on_mismatch = os.getenv("BASELINE_ACTION_ON_MISMATCH", "log_warning")
+
+    configure_baseline_verification(
+        enabled=verify_enabled,
+        verify_on_startup=True,
+        verify_on_load=verify_on_load,
+        verify_interval_seconds=3600,
+        action_on_mismatch=action_on_mismatch
+    )
+
+    # Verify baseline on startup
+    if verify_enabled:
+        try:
+            storage = get_storage()
+            results = verify_baseline_on_startup(storage)
+
+            if not results.get("verified", True):
+                logger.warning(
+                    "Baseline verification completed with warnings. "
+                    "System will continue operating but core prompts may not be trusted."
+                )
+        except Exception as e:
+            logger.error(f"Baseline verification error: {e}")
+
     logger.info("MCP Tools: ai_prompts, run_prompt, run_prompt_chain, list_prompts, get_project_memory, save_project_memory, adapt_to_project, clean_context, context7_lookup")
     logger.info(f"API Keys loaded: {len(api_keys._keys)} keys")
-    logger.info("Rate limiting: enabled (60s window)")
+    logger.info(f"Rate limiting: {'distributed (Redis)' if _distributed_rate_limiter else 'in-memory (fallback)'}")
+    logger.info(f"Baseline verification: {'enabled' if verify_enabled else 'disabled'}")
 
+
+async def shutdown_event():
+    """Shutdown event handler."""
+    logger.info("Shutting down AI Prompt System MCP Server...")
+
+    # Close Redis connection
+    try:
+        if _redis_client:
+            await _redis_client.close()
+            logger.info("Redis connection closed")
+    except Exception as e:
+        logger.error(f"Error closing Redis connection: {e}")
+
+    # Clear prompt storage cache
+    try:
+        storage = get_storage()
+        storage.clear_cache()
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
+
+    logger.info("Shutdown complete")
+
+
+# Note: FastMCP doesn't support add_event_handler, call startup/shutdown in main()
+# See main() below for startup/shutdown handling
+
+if __name__ == "__main__":
+    # Run startup logic
+    import asyncio
+    asyncio.run(startup_event())
     # Support both transport modes
     # stdio: for Claude Code MCP (docker run --rm -i)
     # sse: for HTTP-based MCP clients
