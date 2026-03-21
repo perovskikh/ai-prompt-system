@@ -199,6 +199,117 @@ ai_prompts("добавь функцию", jwt_token="eyJ...")
 
 ---
 
+## Подключение удалённых клиентов по HTTP
+
+MCP сервер работает на порту 8000 (SSE transport) и доступен для любых HTTP клиентов.
+
+### Быстрый старт для удалённого клиента
+
+```bash
+# Пример подключения через curl
+curl -X POST http://YOUR_SERVER:8000/sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "ai_prompts",
+      "arguments": {
+        "request": "добавь функцию",
+        "jwt_token": "YOUR_JWT_TOKEN"
+      }
+    },
+    "id": 1
+  }'
+```
+
+### Python клиент
+
+```python
+import httpx
+import json
+
+MCP_URL = "http://your-server:8000/sse"
+
+def call_mcp(method: str, params: dict):
+    response = httpx.post(
+        MCP_URL,
+        json={
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": 1
+        },
+        headers={"Content-Type": "application/json"}
+    )
+    return response.json()
+
+# Пример вызова
+result = call_mcp("tools/call", {
+    "name": "ai_prompts",
+    "arguments": {
+        "request": "добавь функцию логирования",
+        "jwt_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+})
+print(result)
+```
+
+### JavaScript/Node.js клиент
+
+```javascript
+const MCP_URL = 'http://your-server:8000/sse';
+
+async function callMcp(method, params) {
+  const response = await fetch(MCP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: 1
+    })
+  });
+  return response.json();
+}
+
+// Вызов ai_prompts
+const result = await callMcp('tools/call', {
+  name: 'ai_prompts',
+  arguments: {
+    request: 'добавь функцию',
+    jwt_token: 'YOUR_JWT_TOKEN'
+  }
+});
+```
+
+### Получение JWT токена
+
+```python
+# Сначала получить токен
+token_result = call_mcp("tools/call", {
+    "name": "generate_jwt_token",
+    "arguments": {
+        "subject": "user-name",
+        "role": "developer",
+        "expiry_hours": 24
+    }
+})
+jwt_token = token_result['result']['content'][0]['text']['token']
+```
+
+### Доступные методы
+
+| Метод | Описание |
+|-------|----------|
+| `tools/list` | Список доступных инструментов |
+| `tools/call` | Вызов инструмента |
+| `resources/list` | Список ресурсов |
+| `resources/read` | Чтение ресурса |
+
+---
+
 ## Интеграция с Claude Code
 
 ### Подключение (рекомендуется — локальный образ)
@@ -309,6 +420,38 @@ ai-prompt-system/
 ```
 API_KEYS__SYSTEM=sk-system-dev
 API_KEYS__PROJECT_1=sk-project-1-key
+```
+
+---
+
+## Документация (Diátaxis)
+
+Система следует **Diátaxis** стандартам документации 2026:
+
+| Category | Папка | Статус |
+|----------|-------|--------|
+| Tutorials | `docs/tutorials/` | Требует создания |
+| How-to | `docs/how-to/` | ✅ 5 файлов |
+| Reference | `docs/reference/` | AUTO-GENERATED |
+| Explanation | `docs/explanation/` | ✅ 4 ADR |
+
+### Структура docs/
+
+```
+docs/
+├── tutorials/     # Обучение с нуля
+├── how-to/        # Практические задачи
+│   ├── BOTTLENECKS_ANALYSIS.md
+│   ├── AUTO_FIX_IMPLEMENTATION.md
+│   ├── TECHNICAL_DEBT_TRACKER.md
+│   ├── MPV.md
+│   └── analysis-CodeShift-promt.md
+├── reference/     # API справка (AUTO-GENERATED)
+└── explanation/
+    └── adr/       # Architecture Decision Records
+        ├── ADR-001-system-genesis.md
+        ├── ADR-002-tiered-prompt-architecture-mpv-integration.md
+        └── ADR-003-prompt-storage-strategy.md
 ```
 
 ---
