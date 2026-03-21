@@ -1051,8 +1051,9 @@ def context7_lookup(library: str, query: str = None) -> dict:
         dict: Library ID, query results, and suggested query for Context7
     """
     # Map common library names to Context7 IDs
+    # Note: These IDs work with Claude Code's built-in Context7 MCP
     LIBRARY_MAP = {
-        "fastapi": "/tiangolo/fastapi",
+        "fastapi": "/fastapi/fastapi",  # Updated: was /tiangolo/fastapi
         "flask": "/pallets/flask",
         "django": "/django/django",
         "react": "/facebook/react",
@@ -1172,12 +1173,12 @@ async def _context7_query_docs(library_id: str, query: str) -> dict:
 
     except Exception as e:
         logger.error(f"Context7 API error: {e}")
-        # Check if it's a DNS error - suggest MCP alternative
+        # Check if it's a DNS error or API error - suggest MCP alternative
         error_str = str(e)
-        if "Name or service not known" in error_str or "nodename nor servname" in error_str:
+        if "Name or service not known" in error_str or "nodename nor servname" in error_str or "ConnectError" in error_str or "404" in error_str:
             return {
                 "status": "error",
-                "error": "Cannot resolve api.context7.com from container (DNS issue)",
+                "error": "Context7 API endpoint unavailable (404 or connection error)",
                 "suggestion": "Use Claude Code's built-in Context7 MCP: mcp__context7__query-docs",
                 "library_id": library_id,
                 "query": query,
