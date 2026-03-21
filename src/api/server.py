@@ -627,7 +627,7 @@ def save_memory(project_id: str, data: dict) -> None:
 
 
 @mcp.tool
-async def ai_prompts(request: str, context: dict = None) -> dict:
+async def ai_prompts(request: str, context: dict = None, jwt_token: str = None) -> dict:
     """
     Universal handler for 'use ai-prompts' pattern.
 
@@ -640,6 +640,9 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
         "Создай API эндпоинт для пользователей. use ai-prompts"
 
     Args:
+        request: Natural language request (e.g., "добавь функцию")
+        context: Optional context data
+        jwt_token: JWT token for authentication (optional if JWT disabled)
         request: Natural language request (what you want to do)
         context: Optional context (file paths, project info, etc.)
 
@@ -652,6 +655,11 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
         - target: над чем (README.md, API, функцию, баг, etc.)
     """
     try:
+        # JWT Authentication
+        is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+        if not is_valid:
+            return {"status": "error", "error": "Authentication required", "hint": "Provide valid jwt_token or API key"}
+
         # Load registry for prompt selection
         registry = load_registry()
         prompts_list = registry.get("prompts", [])
@@ -831,18 +839,23 @@ async def ai_prompts(request: str, context: dict = None) -> dict:
 
 
 @mcp.tool
-async def run_prompt(prompt_name: str, input_data: dict) -> dict:
+async def run_prompt(prompt_name: str, input_data: dict, jwt_token: str = None) -> dict:
     """
     Execute a single prompt through LLM.
 
     Args:
         prompt_name: Name of the prompt to run (without .md)
         input_data: Input data for the prompt
+        jwt_token: JWT token for authentication (optional if JWT disabled)
 
     Returns:
         dict: Execution result with generated content
     """
     try:
+        # JWT Authentication
+        is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+        if not is_valid:
+            return {"status": "error", "error": "Authentication required"}
         prompt = load_prompt(prompt_name)
         logger.info(f"Running prompt: {prompt_name}")
 
@@ -868,17 +881,23 @@ async def run_prompt(prompt_name: str, input_data: dict) -> dict:
 
 
 @mcp.tool
-async def run_prompt_chain(idea: str, stages: list[str]) -> dict:
+async def run_prompt_chain(idea: str, stages: list[str], jwt_token: str = None) -> dict:
     """
     Execute full chain: idea → finish through LLM.
 
     Args:
         idea: The initial idea/concept
         stages: List of stages to execute (ideation, analysis, design, etc.)
+        jwt_token: JWT token for authentication (optional if JWT disabled)
 
     Returns:
         dict: Chain execution results with generated content
     """
+    # JWT Authentication
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
     results = []
     prompts_data = []
 
