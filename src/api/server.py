@@ -785,6 +785,18 @@ async def ai_prompts(request: str, context: dict = None, jwt_token: str = None) 
             "repository analysis": "promt-gitmcp",
             "understand repo": "promt-gitmcp",
             "learn library": "promt-gitmcp",
+
+            # Claude Cookbook integration
+            "claude cookbook": "promt-claude-cookbook",
+            "claude api": "promt-claude-cookbook",
+            "tool use": "promt-claude-cookbook",
+            "tool calling": "promt-claude-cookbook",
+            "vision": "promt-claude-cookbook",
+            "multimodal": "promt-claude-cookbook",
+            "rag": "promt-claude-cookbook",
+            "json mode": "promt-claude-cookbook",
+            "sub-agent": "promt-claude-cookbook",
+            "anthropic api": "promt-claude-cookbook",
         }
 
         request_lower = request.lower()

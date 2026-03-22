@@ -630,7 +630,27 @@
       ],
       "created_at": "2026-03-21",
       "description": "Интеграция с GitMCP для понимания чужих репозиториев"
+    },
+    "promt-claude-cookbook.md": {
+      "name": "promt-claude-cookbook.md",
+      "file": "universal/ai_agent_prompts/promt-claude-cookbook.md",
+      "version": "1.0.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "claude",
+        "cookbook",
+        "api",
+        "integration",
+        "tool-use",
+        "vision",
+        "rag",
+        "multimodal"
+      ],
+      "created_at": "2026-03-22",
+      "description": "Интеграция с Claude Cookbook — официальные примеры Anthropic для Claude API"
     }
   },
-  "total_prompts": 38
+  "total_prompts": 39
 }
