@@ -27,6 +27,12 @@ services:
       # JWT Auth (Phase 5)
       - JWT_SECRET=${JWT_SECRET:-}
       - JWT_ENABLED=${JWT_ENABLED:-false}
+      # LLM API Keys (loaded from .env)
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
       - ./.env:/app/.env:ro
       - ./prompts:/app/prompts

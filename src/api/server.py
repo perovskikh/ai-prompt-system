@@ -9,8 +9,22 @@ MCP-сервер для управления AI-промтами с полным
 - Multi-tenant изоляция (API Keys)
 """
 
-from fastmcp import FastMCP
+# Load .env FIRST, before any imports that might use os.getenv
 from pathlib import Path
+from dotenv import load_dotenv
+
+env_paths = [
+    Path.cwd() / ".env",
+    Path(__file__).parent.parent / ".env",
+    Path("/app/.env"),
+]
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path, override=True)
+        break
+
+# Now safe to import other modules
+from fastmcp import FastMCP
 import json
 import logging
 import os
@@ -19,23 +33,8 @@ from typing import Optional
 from functools import wraps
 import asyncio
 
-# Load .env file for local development
-from dotenv import load_dotenv
-from pathlib import Path
-
 # Redis imports for distributed rate limiting
 import redis.asyncio as redis
-
-# Try to load .env from multiple locations
-env_paths = [
-    Path.cwd() / ".env",
-    Path(__file__).parent.parent / ".env",
-    Path("/app/.env"),
-]
-for env_path in env_paths:
-    if env_path.exists():
-        load_dotenv(env_path, override=True)  # Force override existing env vars
-        break
 
 # Import executor for LLM integration
 from src.services.executor import PromptExecutor
