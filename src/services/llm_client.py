@@ -80,6 +80,40 @@ PROVIDERS = {
 }
 
 
+# Quick provider switcher
+def set_provider(provider: str) -> str:
+    """Quick switch LLM provider via environment variable.
+
+    Usage:
+        set_provider("glm-4-7")    # Z.ai GLM-4.7
+        set_provider("minimax")    # MiniMax M2.7
+        set_provider("deepseek")   # DeepSeek Chat
+        set_provider("anthropic")   # Claude Sonnet
+        set_provider("hunter")      # Free via OpenRouter
+
+    Returns: provider name or error message
+    """
+    valid = list(PROVIDERS.keys())
+    if provider not in valid:
+        return f"Error: invalid provider '{provider}'. Valid: {valid}"
+
+    os.environ["LLM_PROVIDER"] = provider
+    return f"Provider switched to: {provider} ({PROVIDERS[provider]['model']})"
+
+
+def get_available_providers() -> dict:
+    """Get list of available providers with their status."""
+    result = {}
+    for name, config in PROVIDERS.items():
+        api_key = os.getenv(config["env_key"])
+        result[name] = {
+            "model": config["model"],
+            "env_key": config["env_key"],
+            "available": bool(api_key),
+        }
+    return result
+
+
 class LLMClient:
     """Async client for multiple LLM providers."""
 
@@ -115,6 +149,7 @@ class LLMClient:
     def _detect_provider(self) -> str:
         """Detect best available provider based on API keys in .env."""
         # Priority order (March 2026):
+        # 0. LLM_PROVIDER env var (explicit selection)
         # 1. ZAI_API_KEY → GLM-4.7 (Z.ai, лучшая модель)
         # 2. ZAI_API_KEY → GLM-4.5-Air (Z.ai, если 4.7 недоступна)
         # 3. OPENROUTER_API_KEY → Hunter (free)
@@ -122,6 +157,11 @@ class LLMClient:
         # 5. DEEPSEEK_API_KEY → DeepSeek
         # 6. ANTHROPIC_API_KEY → Anthropic (may have no credits)
         # 7. Fallback: hunter (free via OpenRouter)
+
+        # Check explicit provider first
+        explicit = os.getenv("LLM_PROVIDER")
+        if explicit and explicit in PROVIDERS:
+            return explicit
 
         if os.getenv("ZAI_API_KEY"):
             return "glm-4-7"  # GLM-4.7 via Z.ai (лучшая)
