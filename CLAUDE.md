@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI Prompt System is an MCP (Model Context Protocol) server for managing AI prompts through their full lifecycle: from idea to production implementation. It provides 10 MCP tools for prompt execution, chaining, versioning, and project memory management.
 
-The system supports natural language interaction through `ai_prompts` which automatically routes requests to appropriate prompts based on intent keywords.
+The system supports natural language interaction through `p9i` (via MCP tool `ai_prompts`) which automatically routes requests to appropriate prompts based on intent keywords.
 
 ## Commands
 

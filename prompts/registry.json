@@ -703,7 +703,27 @@
       ],
       "created_at": "2026-03-22",
       "description": "Research phase before planning: gather documentation, best practices, similar projects"
+    },
+    "promt-ui-generator.md": {
+      "name": "promt-ui-generator.md",
+      "file": "universal/ai_agent_prompts/promt-ui-generator.md",
+      "version": "1.0.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "ui",
+        "ux",
+        "generation",
+        "react",
+        "tailwind",
+        "shadcn",
+        "component",
+        "frontend"
+      ],
+      "created_at": "2026-03-22",
+      "description": "Generate beautiful, accessible UI code from natural language (React + Tailwind + shadcn/ui)"
     }
   },
-  "total_prompts": 42
+  "total_prompts": 47
 }
