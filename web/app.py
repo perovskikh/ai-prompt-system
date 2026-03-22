@@ -2,17 +2,51 @@
 p9i Control Panel - Web UI for MCP Server Management
 
 Streamlit application to manage p9i MCP server through a graphical interface.
+Directly imports and uses p9i server functions.
 """
 
 import streamlit as st
-import httpx
 import json
 import os
+import sys
 from datetime import datetime
 
+# Add project root to path
+sys.path.insert(0, "/app")
+
+# Load environment
+from pathlib import Path
+from dotenv import load_dotenv
+env_path = Path("/app/.env")
+if env_path.exists():
+    load_dotenv(env_path)
+
 # Configuration
-MCP_URL = os.getenv("MCP_URL", "http://localhost:8000")
 API_KEY = os.getenv("API_KEY", "sk-system-dev")
+
+# Import p9i server functions
+try:
+    from src.api.server import (
+        get_available_mcp_tools,
+        list_prompts,
+        get_project_memory,
+        save_project_memory,
+        generate_jwt_token,
+        validate_jwt_token,
+        generate_tailwind,
+        generate_shadcn,
+        generate_textual,
+        generate_tauri,
+        get_figma_file,
+        get_figma_components,
+        get_figma_styles,
+        export_figma_nodes,
+        figma_to_code,
+    )
+    SERVER_AVAILABLE = True
+except Exception as e:
+    SERVER_AVAILABLE = False
+    print(f"Warning: Could not import server functions: {e}")
 
 # Page configuration
 st.set_page_config(
@@ -65,22 +99,50 @@ st.markdown("""
 
 
 def call_mcp_tool(tool_name: str, arguments: dict = None) -> dict:
-    """Call MCP tool via HTTP SSE API."""
+    """Call MCP tool directly from server module."""
+    if not SERVER_AVAILABLE:
+        return {"error": "Server functions not available"}
+
+    tool_map = {
+        "get_available_mcp_tools": get_available_mcp_tools,
+        "list_prompts": list_prompts,
+        "get_project_memory": get_project_memory,
+        "save_project_memory": save_project_memory,
+        "generate_jwt_token": generate_jwt_token,
+        "validate_jwt_token": validate_jwt_token,
+        "generate_tailwind": generate_tailwind,
+        "generate_shadcn": generate_shadcn,
+        "generate_textual": generate_textual,
+        "generate_tauri": generate_tauri,
+        "get_figma_file": get_figma_file,
+        "get_figma_components": get_figma_components,
+        "get_figma_styles": get_figma_styles,
+        "export_figma_nodes": export_figma_nodes,
+        "figma_to_code": figma_to_code,
+    }
+
+    tool_func = tool_map.get(tool_name)
+    if not tool_func:
+        return {"error": f"Tool {tool_name} not found"}
+
     try:
-        response = httpx.post(
-            f"{MCP_URL}/sse",
-            json={
-                "jsonrpc": "2.0",
-                "method": "tools/call",
-                "params": {
-                    "name": tool_name,
-                    "arguments": arguments or {}
-                },
-                "id": 1
-            },
-            timeout=30.0
-        )
-        return response.json()
+        import asyncio
+        args = arguments or {}
+
+        # Handle JWT token for tools that require it
+        if tool_name in ["generate_tailwind", "generate_shadcn", "generate_textual",
+                         "generate_tauri", "get_figma_file", "get_figma_components",
+                         "get_figma_styles", "export_figma_nodes", "figma_to_code"]:
+            # Generate a temporary token for testing
+            token_result = generate_jwt_token("web_user", "admin", 24, admin_key=API_KEY)
+            args["jwt_token"] = token_result.get("token", "")
+
+        if asyncio.iscoroutinefunction(tool_func):
+            result = asyncio.run(tool_func(**args))
+        else:
+            result = tool_func(**args)
+
+        return result
     except Exception as e:
         return {"error": str(e)}
 

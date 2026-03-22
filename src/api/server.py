@@ -2346,6 +2346,7 @@ if __name__ == "__main__":
     # Run startup logic
     import asyncio
     asyncio.run(startup_event())
+
     # Support both transport modes
     # stdio: for Claude Code MCP (docker run --rm -i)
     # sse: for HTTP-based MCP clients
