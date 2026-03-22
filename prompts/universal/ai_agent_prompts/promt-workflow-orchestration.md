@@ -1,7 +1,7 @@
 ---
 name: promt-workflow-orchestration
 version: "1.2"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [workflow, orchestration, pipeline, automation]

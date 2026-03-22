@@ -5,7 +5,7 @@
 
 ## Overview
 
-This guide explains the implemented AI-powered automatic bottleneck detection and code fixing system for ai-prompt-system.
+This guide explains the implemented AI-powered automatic bottleneck detection and code fixing system for p9i.
 
 ## Architecture
 
@@ -121,7 +121,7 @@ elif fix["severity"] in ["high", "medium"]:
 docker run --rm -i \
   -v $PWD:/project \
   -v $PWD/.env:/app/.env \
-  perovskikh/ai-prompt-system \
+  perovskikh/p9i \
   python -c "
 import asyncio
 from src.api.server import get_prompt_executor
@@ -144,7 +144,7 @@ asyncio.run(test())
 docker run --rm -i \
   -v $PWD:/project \
   -v $PWD/.env:/app/.env \
-  perovskikh/ai-prompt-system \
+  perovskikh/p9i \
   python -c "
 import asyncio
 import json

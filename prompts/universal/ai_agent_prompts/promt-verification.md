@@ -1,7 +1,7 @@
 ---
 name: promt-verification
 version: "3.4"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [verification, adr, code, quality, self-verification]

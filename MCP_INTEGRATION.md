@@ -7,9 +7,9 @@
 ```json
 {
   "mcpServers": {
-    "ai-prompt-system": {
+    "p9i": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "perovskikh/ai-prompt-system"]
+      "args": ["run", "--rm", "-i", "perovskikh/p9i"]
     },
     "context7": {
       "command": "npx",

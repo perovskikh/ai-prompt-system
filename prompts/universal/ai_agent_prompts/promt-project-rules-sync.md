@@ -1,7 +1,7 @@
 ---
 name: promt-project-rules-sync
 version: "1.1"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [rules, sync, project, configuration]

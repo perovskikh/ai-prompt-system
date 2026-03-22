@@ -402,7 +402,7 @@ done
 
 - Единый источник правил: `meta-promt-adr-system-generator.md`.
 - Перед сохранением: проверка на конфликты с другими промптами.
-- При неразрешимом конфликте: зафиксировать в `docs/explanation/ai-prompt-system-gap-analysis.md`.
+- При неразрешимом конфликте: зафиксировать в `docs/explanation/p9i-gap-analysis.md`.
 
 ---
 
@@ -650,7 +650,7 @@ graph TD
 |----------|------|
 | Source of Truth | `docs/ai-agent-prompts/meta-promptness/meta-promt-adr-system-generator.md` |
 | Planner Meta-Prompt | `docs/ai-agent-prompts/meta-promptness/meta-promt-adr-implementation-planner.md` |
-| Gap Analysis | `docs/explanation/ai-prompt-system-gap-analysis.md` |
+| Gap Analysis | `docs/explanation/p9i-gap-analysis.md` |
 | ADR Index | `docs/explanation/adr/index.md` |
 | ADR Template | `docs/explanation/adr/ADR-template.md` |
 | Project Rules | `docs/rules/project-rules.md` |

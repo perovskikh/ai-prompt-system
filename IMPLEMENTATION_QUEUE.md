@@ -79,6 +79,6 @@ Layer 2 (Features)
 
 ```bash
 # Команда для применения
-cd ai-prompt-system
+cd p9i
 docker compose up -d --build
 ```

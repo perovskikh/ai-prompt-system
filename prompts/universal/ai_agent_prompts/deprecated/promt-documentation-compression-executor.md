@@ -1,7 +1,7 @@
 ---
 name: promt-documentation-quality-compression
 version: "1.1"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [documentation, quality, compression]
@@ -225,7 +225,7 @@ export AI_PROMPT_SYSTEM_CONFIG=/path/to/config.yaml
 
 ### Verify Installation
 ```bash
-ai-prompts --version
+p9i --version
 ```
 EOF
 

@@ -355,7 +355,7 @@ def _parse_response(self, response: dict) -> dict:
 **Providers Supported**:
 - GLM-4.7 (Z.ai)
 - GLM-4.5-Air (Z.ai)
-- MiniMax-M2.5
+- MiniMax-M2.7
 - DeepSeek-chat
 - DeepSeek-reasoner
 - Anthropic

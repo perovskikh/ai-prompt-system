@@ -1,7 +1,7 @@
 ---
 name: promt-index-update
 version: "2.6"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [index, sync, documentation, readme]

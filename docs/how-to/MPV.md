@@ -390,7 +390,7 @@ claude mcp add \
   --scope user \
   --header "AI_PROMPTS_API_KEY: your-api-key" \
   --transport http \
-  ai-prompt-system https://mcp.ai-prompt-system.dev/mcp
+  p9i https://mcp.ai-prompt-system.dev/mcp
 ```
 
 ### Подключение через конфиг
@@ -398,7 +398,7 @@ claude mcp add \
 ```json
 {
   "mcpServers": {
-    "ai-prompt-system": {
+    "p9i": {
       "type": "http",
       "url": "https://mcp.ai-prompt-system.dev/mcp",
       "headers": {
@@ -562,7 +562,7 @@ Q4  →  Комьюнити паков
 | Провайдер | Переменная | Модель | Статус |
 |-----------|-----------|--------|--------|
 | Z.ai | `ZAI_API_KEY` | GLM-4.7 | ✅ Default |
-| MiniMax | `MINIMAX_API_KEY` | MiniMax-M2.5 | ✅ |
+| MiniMax | `MINIMAX_API_KEY` | MiniMax-M2.7 | ✅ |
 | OpenRouter | `OPENROUTER_API_KEY` | hunter-alpha | ✅ Free fallback |
 
 ### Внешние MCP
@@ -611,7 +611,7 @@ claude mcp add \
   --scope user \
   --header "AI_PROMPTS_API_KEY: your-api-key" \
   --transport http \
-  ai-prompt-system https://mcp.ai-prompt-system.dev/mcp
+  p9i https://mcp.ai-prompt-system.dev/mcp
 
 # 2. Установить паки для своего стека
 install_pack("k8s-pack")

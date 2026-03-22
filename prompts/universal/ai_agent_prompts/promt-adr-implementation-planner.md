@@ -1,7 +1,7 @@
 ---
 name: promt-adr-implementation-planner
 version: "2.3"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [adr, planning, implementation, tracking]

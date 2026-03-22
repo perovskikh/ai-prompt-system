@@ -1,7 +1,7 @@
 ---
 name: promt-readme-sync
 version: "1.0"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [sync, readme, documentation]

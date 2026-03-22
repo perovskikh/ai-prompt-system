@@ -1,7 +1,7 @@
 # ADR Consolidation Prompt - Automatic Slug Normalization
 
 Version: 2.6
-Type: ai-prompt-system
+Type: p9i
 Layer: Meta
 Status: active
 Tags: [consolidation, dedup, sync, adr]

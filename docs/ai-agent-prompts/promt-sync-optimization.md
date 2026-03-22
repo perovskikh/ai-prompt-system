@@ -607,7 +607,7 @@ graph TD
 | Верификация (структурная) | `scripts/verify-all-adr.sh` |
 | Чеклист-парсер | `scripts/verify-adr-checklist.sh` |
 | ADR Index | `docs/explanation/adr/index.md` |
-| Gap Analysis | `docs/explanation/ai-prompt-system-gap-analysis.md` |
+| Gap Analysis | `docs/explanation/p9i-gap-analysis.md` |
 | Project rules | `.github/copilot-instructions.md` |
 
 ---

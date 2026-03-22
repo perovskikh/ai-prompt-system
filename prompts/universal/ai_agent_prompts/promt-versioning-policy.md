@@ -1,7 +1,7 @@
 ---
 name: promt-versioning-policy
 version: "1.3"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [versioning, policy, semver, registry]

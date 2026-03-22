@@ -1,7 +1,7 @@
 ---
 name: promt-feature-add
 version: "1.5"
-type: ai-prompt-system
+type: p9i
 layer: Operations
 status: active
 tags: [feature, adr, context7]

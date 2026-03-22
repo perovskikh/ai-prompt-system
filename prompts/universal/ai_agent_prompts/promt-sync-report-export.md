@@ -1,7 +1,7 @@
 ---
 name: promt-sync-report-export
 version: "1.2"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [sync, export, report, documentation]

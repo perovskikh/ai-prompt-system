@@ -60,14 +60,14 @@ mypy src/
 
 ```bash
 # Build local image
-docker build -f docker/Dockerfile -t ai-prompt-system .
+docker build -f docker/Dockerfile -t p9i .
 
 # Run with volume mounts (for development)
 docker run --rm -i \
   -v $PWD/.env:/app/.env \
   -v $PWD:/project \
   -v $PWD/memory:/app/memory \
-  ai-prompt-system
+  p9i
 ```
 
 ## Architecture
@@ -115,7 +115,7 @@ The `ai_prompts` tool routes natural language requests based on keywords:
 | `version`, `версион` | promt-versioning-policy | Versioning policy |
 | `adapt`, `адаптац`, `onboard` | promt-project-adaptation | Project adaptation |
 | `создай промт`, `new prompt`, `шаблон` | promt-prompt-creator | Create prompts |
-| `адаптируй`, `init ai-promts`, `новый проект` | promt-system-adapt | Initialize system |
+| `адаптируй`, `init p9i`, `новый проект` | promt-system-adapt | Initialize system |
 
 ### Transport Modes
 
@@ -175,14 +175,14 @@ The system executes prompts through multiple LLM providers with auto-detection:
 1. ZAI_API_KEY → GLM-4.7 (Z.ai, recommended)
 2. ZAI_API_KEY → GLM-4.5-Air (Z.ai, if 4.7 unavailable)
 3. OPENROUTER_API_KEY → hunter-alpha (free via OpenRouter)
-4. MINIMAX_API_KEY → MiniMax-M2.5
+4. MINIMAX_API_KEY → MiniMax-M2.7
 5. DEEPSEEK_API_KEY → deepseek-chat or deepseek-reasoner
 6. ANTHROPIC_API_KEY → claude-sonnet-4-20250514 (direct)
 7. Fallback → hunter-alpha (free)
 
 **Supported Models:**
 - GLM-4.7, GLM-4.5-Air (via Z.ai)
-- MiniMax-M2.5 (via MiniMax)
+- MiniMax-M2.7 (via MiniMax)
 - deepseek-chat, deepseek-reasoner (via DeepSeek)
 - claude-sonnet-4-20250514 (via Anthropic or Z.ai)
 - openrouter/hunter-alpha (via OpenRouter, free)
@@ -208,14 +208,14 @@ To use with Claude Code, add to `~/.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "ai-prompt-system": {
+    "p9i": {
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
         "-v", "$PWD/.env:/app/.env",
         "-v", "$PWD:/project",
         "-v", "$PWD/memory:/app/memory",
-        "perovskikh/ai-prompt-system"
+        "perovskikh/p9i"
       ]
     }
   }

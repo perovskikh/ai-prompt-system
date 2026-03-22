@@ -1,7 +1,7 @@
 ---
 name: promt-consolidation
 version: "2.5"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [consolidation, dedup, sync, adr]

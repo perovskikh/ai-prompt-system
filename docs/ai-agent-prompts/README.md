@@ -364,7 +364,7 @@ Guards (ОБЯЗАТЕЛЬНО после каждой фазы):
 - [Working with Diataxis Documentation](../how-to/working-with-diataxis-documentation.md) — ADR guidelines
 - [ADR Index](../explanation/adr/index.md) — Полный список ADR
 - `docs/official_document/` — READ-ONLY эталон терминов и API
-- [Анализ пробелов системы промптов](../explanation/ai-prompt-system-gap-analysis.md) — Dual Schema + план расширения
+- [Анализ пробелов системы промптов](../explanation/p9i-gap-analysis.md) — Dual Schema + план расширения
 
 ---
 

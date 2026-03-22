@@ -44,7 +44,7 @@ PROVIDERS = {
     "minimax": {
         "base_url": "https://api.minimax.io/anthropic",
         "endpoint": "/v1/messages",
-        "model": "MiniMax-M2.5",
+        "model": "MiniMax-M2.7",
         "env_key": "MINIMAX_API_KEY",
     },
 

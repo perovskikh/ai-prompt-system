@@ -744,8 +744,8 @@ async def ai_prompts(request: str, context: dict = None, jwt_token: str = None) 
             # System adaptation
             "адаптируй": "promt-system-adapt",
             "подключи систему": "promt-system-adapt",
-            "init ai-promts": "promt-system-adapt",
-            "инициализация ai-promts": "promt-system-adapt",
+            "init p9i": "promt-system-adapt",
+            "инициализация p9i": "promt-system-adapt",
             "new project": "promt-system-adapt",
             "новый проект": "promt-system-adapt",
 

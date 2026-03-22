@@ -12,7 +12,7 @@
 | PostgreSQL | ✅ Healthy | 5432 |
 | Redis | ✅ Healthy | 6379 |
 
-**Последнее тестирование:** 2026-03-21 — MiniMax-M2.5 ✅
+**Последнее тестирование:** 2026-03-22 — MiniMax-M2.7 ✅
 
 ### ADR-002 Реализация
 
@@ -66,7 +66,7 @@
 
 | Провайдер | API Key | Модель | Статус |
 |-----------|---------|--------|--------|
-| **MiniMax** | MINIMAX_API_KEY | MiniMax-M2.5 | ✅ Default |
+| **MiniMax** | MINIMAX_API_KEY | MiniMax-M2.7 | ✅ Default |
 | Z.ai | ZAI_API_KEY | GLM-4.7 | ⚠️ Rate Limited |
 | OpenRouter | OPENROUTER_API_KEY | claude-3-haiku | ✅ Free |
 
@@ -78,8 +78,8 @@
 
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/perovskikh/ai-prompt-system.git
-cd ai-prompt-system
+git clone https://github.com/perovskikh/p9i.git
+cd p9i
 
 # Запустить полный стек
 docker compose up -d
@@ -316,11 +316,11 @@ jwt_token = token_result['result']['content'][0]['text']['token']
 
 ```bash
 # Добавить MCP сервер с монтированием .env, проекта и памяти
-claude mcp add ai-prompt-system -- docker run --rm -i \
+claude mcp add p9i -- docker run --rm -i \
   -v $PWD/.env:/app/.env \
   -v $PWD:/project \
   -v $PWD/memory:/app/memory \
-  ai-prompt-system-mcp-server:latest
+  p9i-mcp-server:latest
 ```
 
 **Для чего нужно:**
@@ -335,14 +335,14 @@ claude mcp add ai-prompt-system -- docker run --rm -i \
 ```json
 {
   "mcpServers": {
-    "ai-prompt-system": {
+    "p9i": {
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
         "-v", "$PWD/.env:/app/.env",
         "-v", "$PWD:/project",
         "-v", "$PWD/memory:/app/memory",
-        "ai-prompt-system-mcp-server:latest"
+        "p9i-mcp-server:latest"
       ]
     }
   }
@@ -359,7 +359,7 @@ claude mcp list
 
 Должно показать:
 ```
-ai-prompt-system: ✓ Connected
+p9i: ✓ Connected
 ```
 
 ---
@@ -382,7 +382,7 @@ pytest --cov=src
 ## Структура проекта
 
 ```
-ai-prompt-system/
+p9i/
 ├── src/
 │   ├── api/
 │   │   └── server.py         # FastMCP сервер (14 tools)
@@ -467,7 +467,7 @@ docs/
 
 ## Репозиторий
 
-https://github.com/perovskikh/ai-prompt-system
+https://github.com/perovskikh/p9i
 
 ---
 

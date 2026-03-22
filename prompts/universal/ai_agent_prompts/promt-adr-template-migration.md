@@ -1,7 +1,7 @@
 ---
 name: promt-adr-template-migration
 version: "1.4"
-type: ai-prompt-system
+type: p9i
 layer: Meta
 status: active
 tags: [adr, template, migration, standards]

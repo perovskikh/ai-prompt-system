@@ -223,7 +223,7 @@ print('✅ Registry consistent')
         with:
           python-version: '3.9'
 
-      - name: Install ai-prompt-system
+      - name: Install p9i
         run: |
           pip install -e .
 
@@ -361,7 +361,7 @@ asyncio.run(analyze_bottlenecks())
         with:
           python-version: '3.9'
 
-      - name: Install ai-prompt-system
+      - name: Install p9i
         run: |
           pip install -e .
 
