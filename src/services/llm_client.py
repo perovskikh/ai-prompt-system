@@ -150,33 +150,33 @@ class LLMClient:
         """Detect best available provider based on API keys in .env."""
         # Priority order (March 2026):
         # 0. LLM_PROVIDER env var (explicit selection)
-        # 1. ZAI_API_KEY → GLM-4.7 (Z.ai, лучшая модель)
-        # 2. ZAI_API_KEY → GLM-4.5-Air (Z.ai, если 4.7 недоступна)
-        # 3. OPENROUTER_API_KEY → Hunter (free)
-        # 4. MINIMAX_API_KEY → MiniMax
-        # 5. DEEPSEEK_API_KEY → DeepSeek
-        # 6. ANTHROPIC_API_KEY → Anthropic (may have no credits)
-        # 7. Fallback: hunter (free via OpenRouter)
+        # 1. MINIMAX_API_KEY → MiniMax (PRIMARY - best性价比)
+        # 2. ZAI_API_KEY → GLM-4.7 (Z.ai)
+        # 3. ANTHROPIC_API_KEY → Anthropic
+        # 4. DEEPSEEK_API_KEY → DeepSeek
+        # 5. OPENROUTER_API_KEY → Hunter (free)
+        # 6. Fallback: hunter (free via OpenRouter)
 
         # Check explicit provider first
         explicit = os.getenv("LLM_PROVIDER")
         if explicit and explicit in PROVIDERS:
             return explicit
 
-        if os.getenv("ZAI_API_KEY"):
-            return "glm-4-7"  # GLM-4.7 via Z.ai (лучшая)
-
-        if os.getenv("OPENROUTER_API_KEY"):
-            return "hunter"  # Free: openrouter/hunter-alpha
-
+        # PRIMARY: MiniMax (best price/quality ratio)
         if os.getenv("MINIMAX_API_KEY"):
-            return "minimax"  # abab6.5s-chat
+            return "minimax"  # MiniMax-M2.7
+
+        if os.getenv("ZAI_API_KEY"):
+            return "glm-4-7"  # GLM-4.7 via Z.ai
+
+        if os.getenv("ANTHROPIC_API_KEY"):
+            return "anthropic"  # claude-sonnet-4
 
         if os.getenv("DEEPSEEK_API_KEY"):
             return "deepseek"  # deepseek-chat
 
-        if os.getenv("ANTHROPIC_API_KEY"):
-            return "anthropic"  # claude-sonnet-4
+        if os.getenv("OPENROUTER_API_KEY"):
+            return "hunter"  # Free: openrouter/hunter-alpha
 
         return "hunter"  # Fallback to free
 

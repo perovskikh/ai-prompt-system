@@ -714,6 +714,14 @@ async def ai_prompts(request: str, context: dict = None, jwt_token: str = None) 
             "tool use": "promt-claude-cookbook",
             "vision": "promt-claude-cookbook",
 
+            # ADR & Code Review
+            "adr review": "promt-llm-review",
+            "review adr": "promt-llm-review",
+            "llm review": "promt-llm-review",
+            "code review": "promt-llm-review",
+            "ревью adr": "promt-llm-review",
+            "проверь adr": "promt-llm-review",
+
             # Bottleneck analysis & research (2026 docs standards)
             "проведи исследование": "promt-bottleneck-analysis-2026",
             "узкие места": "promt-bottleneck-analysis-2026",
@@ -1505,6 +1513,259 @@ def clean_context(current_tokens: int, threshold: int = 35000) -> dict:
     }
 
 
+# ============================================================================
+# PIPELINE TOOLS (ADR-004: Deep-Project Integration)
+# ============================================================================
+
+# In-memory pipeline state storage
+_pipeline_state: dict = {}
+
+
+@mcp.tool
+async def run_interview(
+    goal: str,
+    context: dict = None,
+    jwt_token: str = None
+) -> dict:
+    """
+    AI-Powered Interview - Clarify requirements through Q&A.
+
+    This tool implements the interview system from deep-project:
+    - Ask clarifying questions to understand the goal
+    - Extract constraints, preferences, and requirements
+    - Return structured context for prompt generation
+
+    Args:
+        goal: The high-level goal or task to clarify
+        context: Optional existing context
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Interview results with clarified requirements
+    """
+    # Validate auth
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    # Generate interview questions using LLM
+    interview_prompt = f"""You are conducting an AI interview to clarify requirements.
+
+Goal: {goal}
+
+Generate 3-5 clarifying questions to better understand this task.
+For each question, explain why it's important.
+
+Respond in JSON format:
+{{
+  "questions": [
+    {{"question": "...", "why": "..."}}
+  ],
+  "key_constraints": [],
+  "preferred_output_format": null
+}}"""
+
+    try:
+        executor = get_prompt_executor()
+        result = await executor.execute(interview_prompt, {"goal": goal})
+
+        return {
+            "status": "success",
+            "goal": goal,
+            "interview_questions": result.get("content", ""),
+            "phase": "interview_completed"
+        }
+    except Exception as e:
+        logger.error(f"Interview error: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool
+async def decompose_prompt(
+    complex_goal: str,
+    output_format: str = "chain",
+    jwt_token: str = None
+) -> dict:
+    """
+    Smart Decomposition - Split complex goals into sub-prompts.
+
+    This tool implements the decomposition feature from deep-project:
+    - Analyze the complex goal
+    - Break it down into atomic sub-tasks
+    - Define dependencies between sub-tasks
+    - Create a DAG (Directed Acyclic Graph) of prompts
+
+    Args:
+        complex_goal: The complex goal to decompose
+        output_format: "chain" (sequential) or "dag" (parallel possible)
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Decomposition result with sub-prompts and dependencies
+    """
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    decomposition_prompt = f"""Decompose this goal into atomic sub-prompts:
+
+Goal: {complex_goal}
+Format: {output_format}
+
+Respond in JSON format:
+{{
+  "sub_prompts": [
+    {{"id": "1", "name": "...", "prompt": "...", "depends_on": []}}
+  ],
+  "execution_order": ["1", "2", ...],
+  "estimated_steps": 3
+}}"""
+
+    try:
+        executor = get_prompt_executor()
+        result = await executor.execute(decomposition_prompt, {"goal": complex_goal})
+
+        return {
+            "status": "success",
+            "goal": complex_goal,
+            "decomposition": result.get("content", ""),
+            "format": output_format
+        }
+    except Exception as e:
+        logger.error(f"Decomposition error: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool
+async def generate_spec(
+    prompt_group: str,
+    jwt_token: str = None
+) -> dict:
+    """
+    Automated Spec Generation - Create documentation for prompt groups.
+
+    This tool generates a spec.md file documenting:
+    - Purpose of the prompt group
+    - Input/output contracts
+    - Dependencies and relationships
+    - Usage examples
+
+    Args:
+        prompt_group: Name of the prompt group to document
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Generated spec documentation
+    """
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    # Get prompts in the group
+    registry = load_registry()
+    prompts = registry.get("prompts", {})
+
+    group_prompts = {
+        name: info for name, info in prompts.items()
+        if prompt_group.lower() in name.lower()
+    }
+
+    spec_prompt = f"""Generate spec documentation for prompt group '{prompt_group}';
+
+Prompts in group:
+{chr(10).join([f'- {k}: {v.get("description", "")}' for k, v in list(group_prompts.items())[:10]])}
+
+Create a spec.md with:
+1. Overview
+2. Input/Output contracts
+3. Dependencies
+4. Usage examples"""
+
+    try:
+        executor = get_prompt_executor()
+        result = await executor.execute(spec_prompt, {"group": prompt_group})
+
+        return {
+            "status": "success",
+            "prompt_group": prompt_group,
+            "spec": result.get("content", ""),
+            "prompts_count": len(group_prompts)
+        }
+    except Exception as e:
+        logger.error(f"Spec generation error: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool
+def checkpoint_save(
+    session_id: str,
+    state: dict,
+    jwt_token: str = None
+) -> dict:
+    """
+    Save checkpoint - Store session state for resume capability.
+
+    Args:
+        session_id: Unique session identifier
+        state: State to save
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Checkpoint saved confirmation
+    """
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    global _pipeline_state
+    _pipeline_state[session_id] = {
+        "state": state,
+        "timestamp": time.time()
+    }
+
+    return {
+        "status": "success",
+        "session_id": session_id,
+        "saved_at": time.time()
+    }
+
+
+@mcp.tool
+def checkpoint_load(
+    session_id: str,
+    jwt_token: str = None
+) -> dict:
+    """
+    Load checkpoint - Resume session from saved state.
+
+    Args:
+        session_id: Unique session identifier
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Restored session state
+    """
+    is_valid, auth_data = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    global _pipeline_state
+    checkpoint = _pipeline_state.get(session_id)
+
+    if not checkpoint:
+        return {
+            "status": "error",
+            "error": f"Session {session_id} not found"
+        }
+
+    return {
+        "status": "success",
+        "session_id": session_id,
+        "state": checkpoint.get("state", {}),
+        "saved_at": checkpoint.get("timestamp")
+    }
+
+
 @mcp.tool
 def execute_bash(command: str, cwd: str = "/app") -> dict:
     """
@@ -1570,6 +1831,12 @@ def get_available_mcp_tools() -> dict:
         {"name": "save_project_memory", "description": "Save project memory"},
         {"name": "adapt_to_project", "description": "Auto-detect stack and adapt prompts"},
         {"name": "clean_context", "description": "Clean context when token limit exceeded"},
+        # Pipeline tools (ADR-004)
+        {"name": "run_interview", "description": "AI interview to clarify requirements"},
+        {"name": "decompose_prompt", "description": "Decompose complex goals into sub-prompts"},
+        {"name": "generate_spec", "description": "Auto-generate spec documentation"},
+        {"name": "checkpoint_save", "description": "Save session checkpoint"},
+        {"name": "checkpoint_load", "description": "Load session checkpoint"},
         {"name": "context7_lookup", "description": "Get Context7 library ID for documentation lookup"},
         {"name": "context7_query", "description": "Query Context7 documentation API directly"},
         {"name": "github_mcp_list_repos", "description": "List/search GitHub repositories"},
