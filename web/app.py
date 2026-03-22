@@ -281,6 +281,10 @@ elif selected_page == "📝 Prompts":
     prompts_result = get_prompts()
     prompts = prompts_result.get("prompts", [])
 
+    # Ensure prompts is a list
+    if not isinstance(prompts, list):
+        prompts = []
+
     # Filter by search
     if search:
         prompts = [p for p in prompts if search.lower() in p.get("name", "").lower()]
