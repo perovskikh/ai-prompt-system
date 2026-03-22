@@ -8,12 +8,33 @@ Siri-like interface for p9i.
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 
 from src.services.executor import PromptExecutor
 
 logger = logging.getLogger(__name__)
+
+# Prompts directory
+PROMPTS_DIR = Path("/app/prompts")
+
+
+def load_prompt(prompt_name: str) -> str:
+    """Load prompt content from file."""
+    # Try different locations
+    for search_dir in [PROMPTS_DIR / "universal", PROMPTS_DIR / "agents", PROMPTS_DIR]:
+        prompt_file = search_dir / f"{prompt_name}.md"
+        if prompt_file.exists():
+            return prompt_file.read_text()
+
+        # Also check subdirectories
+        for subdir in ["architect", "developer", "reviewer", "designer", "devops"]:
+            prompt_file = search_dir / subdir / f"{prompt_name}.md"
+            if prompt_file.exists():
+                return prompt_file.read_text()
+
+    return ""
 
 
 @dataclass
@@ -194,16 +215,27 @@ class AgentOrchestrator:
             )
 
         try:
-            # Select appropriate prompt
+            # Select appropriate prompt name
             prompt_name = self._select_prompt(agent_name, request)
+
+            # Load prompt content from file
+            prompt_content = load_prompt(prompt_name)
+
+            if not prompt_content:
+                return AgentResult(
+                    agent=agent_name,
+                    status="error",
+                    error=f"Prompt {prompt_name} not found"
+                )
 
             # Build context
             exec_context = context or {}
             exec_context["agent"] = agent.name
+            exec_context["task"] = request
             exec_context["memory"] = self.get_agent_context(agent_name)
 
-            # Execute prompt
-            result = await self.executor.execute(prompt_name, exec_context)
+            # Execute prompt with content
+            result = await self.executor.execute(prompt_content, exec_context)
 
             # Save to memory
             self.save_agent_context(agent_name, {
