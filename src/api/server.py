@@ -38,6 +38,7 @@ import redis.asyncio as redis
 
 # Import executor for LLM integration
 from src.services.executor import PromptExecutor
+from src.services.orchestrator import AgentOrchestrator, get_orchestrator
 
 # Import v2 storage and middleware
 from src.storage.prompts_v2 import (
@@ -2134,6 +2135,185 @@ Color Palette:"""
         return {"status": "error", "error": str(e)}
 
 
+# ============================================================
+# Multi-Agent Orchestrator (ADR-007)
+# ============================================================
+
+@mcp.tool()
+async def p9i_siri(
+    request: str,
+    jwt_token: str = None
+) -> dict:
+    """
+    Central router - Siri-like interface for p9i.
+
+    Automatically detects needed agents and orchestrates their execution.
+
+    Args:
+        request: Natural language request
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Orchestrated results from multiple agents
+
+    Examples:
+        "Спроектируй и создай систему авторизации"
+        "Добавь функцию и проведи ревью"
+        "Создай UI компонент и проверь безопасность"
+    """
+    is_valid, _ = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    try:
+        orchestrator = get_orchestrator()
+        result = await orchestrator.route(request)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def architect_design(
+    specification: str,
+    jwt_token: str = None
+) -> dict:
+    """
+    Architect Agent - System design and architecture.
+
+    Args:
+        specification: What to design
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Architecture design
+    """
+    is_valid, _ = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    try:
+        orchestrator = get_orchestrator()
+        result = await orchestrator.execute_single_agent("architect", specification)
+        return {
+            "status": result.status,
+            "agent": result.agent,
+            "output": result.output,
+            "error": result.error,
+            "metadata": result.metadata
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def developer_code(
+    task: str,
+    language: str = "python",
+    jwt_token: str = None
+) -> dict:
+    """
+    Developer Agent - Code generation.
+
+    Args:
+        task: What code to generate
+        language: Programming language (python, javascript, go, etc.)
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Generated code
+    """
+    is_valid, _ = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    try:
+        orchestrator = get_orchestrator()
+        task_with_lang = f"{task} (language: {language})"
+        result = await orchestrator.execute_single_agent("developer", task_with_lang)
+        return {
+            "status": result.status,
+            "agent": result.agent,
+            "output": result.output,
+            "error": result.error,
+            "language": language
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def reviewer_check(
+    code: str,
+    review_type: str = "general",
+    language: str = "python",
+    jwt_token: str = None
+) -> dict:
+    """
+    Reviewer Agent - Code review, security audit, quality check.
+
+    Args:
+        code: Code to review
+        review_type: Type of review (general, security, quality)
+        language: Programming language
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: Review results
+    """
+    is_valid, _ = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    try:
+        orchestrator = get_orchestrator()
+        context = {
+            "code": code,
+            "language": language,
+            "review_type": review_type
+        }
+        task = f"Проведи {review_type} ревью кода"
+        result = await orchestrator.execute_single_agent("reviewer", task, context)
+        return {
+            "status": result.status,
+            "agent": result.agent,
+            "output": result.output,
+            "error": result.error,
+            "review_type": review_type
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def list_agents(
+    jwt_token: str = None
+) -> dict:
+    """
+    List all available agents in the orchestrator.
+
+    Args:
+        jwt_token: JWT token for authentication
+
+    Returns:
+        dict: List of agents with their prompts
+    """
+    is_valid, _ = validate_auth(jwt_token=jwt_token)
+    if not is_valid:
+        return {"status": "error", "error": "Authentication required"}
+
+    try:
+        orchestrator = get_orchestrator()
+        agents = orchestrator.list_agents()
+        return {
+            "status": "success",
+            "agents": agents,
+            "count": len(agents)
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 @mcp.tool
 def execute_bash(command: str, cwd: str = "/app") -> dict:
     """
@@ -2216,6 +2396,12 @@ def get_available_mcp_tools() -> dict:
         {"name": "get_figma_styles", "description": "Get design tokens from Figma"},
         {"name": "export_figma_nodes", "description": "Export Figma nodes as images"},
         {"name": "figma_to_code", "description": "Convert Figma to TailwindCSS/shadcn code"},
+        # Agent Orchestrator tools (ADR-007)
+        {"name": "p9i_siri", "description": "Central router - Siri for p9i"},
+        {"name": "architect_design", "description": "Architect agent - system design"},
+        {"name": "developer_code", "description": "Developer agent - code generation"},
+        {"name": "reviewer_check", "description": "Reviewer agent - code review"},
+        {"name": "list_agents", "description": "List all available agents"},
         {"name": "context7_lookup", "description": "Get Context7 library ID for documentation lookup"},
         {"name": "context7_query", "description": "Query Context7 documentation API directly"},
         {"name": "github_mcp_list_repos", "description": "List/search GitHub repositories"},
@@ -2260,8 +2446,12 @@ def get_available_mcp_tools() -> dict:
             "figma": {
                 "description": "Figma API integration (ADR-006)",
                 "tools": ["get_figma_file", "get_figma_components", "get_figma_styles", "export_figma_nodes", "figma_to_code"],
-                "env_var": "FIGMA_TOKEN",
-                "example": "get_figma_file('abc123xyz') or figma_to_code('abc123xyz', target='tailwind')"
+                "env_var": "FIGMA_TOKEN"
+            },
+            "agents": {
+                "description": "Multi-Agent Orchestrator (ADR-007) - Siri-like interface",
+                "tools": ["p9i_siri", "architect_design", "developer_code", "reviewer_check", "list_agents"],
+                "example": "p9i_siri('Спроектируй и создай систему авторизации')"
             }
         }
     }
