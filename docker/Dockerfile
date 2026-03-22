@@ -30,9 +30,9 @@ USER appuser
 # Expose MCP port
 EXPOSE 8000
 
-# Health check
+# Health check - check if port is listening
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python3 -c "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()" || exit 1
 
 # Run MCP server
 # Default: stdio for Claude Code compatibility

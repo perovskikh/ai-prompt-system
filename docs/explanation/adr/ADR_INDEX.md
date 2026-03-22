@@ -48,20 +48,16 @@
 
 ### Related Documentation
 
-- **[Bottleneck Analysis](../BOTTLENECKS_ANALYSIS.md)** - Comprehensive analysis of performance, architecture, integration, and security bottlenecks in AI-Prompt System (2026-03-20)
-- **[Auto-Fix Implementation](../AUTO_FIX_IMPLEMENTATION.md)** - Complete guide to AI-powered automatic bottleneck detection and code fixing (2026-03-20)
-- **[System Testing Report](../SYSTEM_TESTING_REPORT.md)** - Full testing validation and simulation results for AI Auto-Fix System (2026-03-20)
-- **[ADR Consolidation Plan](../ADR_CONSOLIDATION_PLAN.md)** - Complete plan to consolidate duplicate ADR-002 files and verify ADR integrity (2026-03-20)
-- **[Technical Debt Tracker](../TECHNICAL_DEBT_TRACKER.md)** - Comprehensive tracker of 14 technical debt items found in BOTTLENECKS_ANALYSIS.md (2026-03-20)
-- **[ADR Consolidation Procedures](../ai-agent-prompts/promt-consolidation.md)** - Guidelines for consolidating duplicate ADRs and maintaining system consistency
+- **[Bottleneck Analysis](../how-to/BOTTLENECKS_ANALYSIS.md)** - Comprehensive analysis of performance, architecture, integration, and security bottlenecks in AI-Prompt System (2026-03-20)
+- **[Auto-Fix Implementation](../how-to/AUTO_FIX_IMPLEMENTATION.md)** - Complete guide to AI-powered automatic bottleneck detection and code fixing (2026-03-20)
+- **[Technical Debt Tracker](../how-to/TECHNICAL_DEBT_TRACKER.md)** - Comprehensive tracker of 14 technical debt items found in BOTTLENECKS_ANALYSIS.md (2026-03-20)
 
 - [MPV Specification](../how-to/MPV.md) - 7-Stage Pipeline & Tier Architecture
 - [Legacy Architecture Analysis](../how-to/analysis-CodeShift-promt.md) - Historical reference (legacy naming)
 - [Architecture Visualization](../how-to/universal_mcp_architecture_mermaid_style.svg) - Visual Diagram
 - [Implementation Report](IMPLEMENTATION_REPORT_2026_03_18.md) - Detailed execution plan
-- [Final Review Report](ADR-002-FINAL-REVIEW.md) - Complete review with real system analysis
-- [Executive Summary](ADR-002-EXECUTIVE-SUMMARY.md) - Final executive summary
-- [Memory Data](../memory/) - Project analysis and tracker data
+- [Final Review Report](reviews/ADR-002-FINAL-REVIEW.md) - Complete review with real system analysis
+- [Memory Data](../../memory/) - Project analysis and tracker data
 
 ---
 
