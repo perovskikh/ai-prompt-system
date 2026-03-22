@@ -650,7 +650,60 @@
       ],
       "created_at": "2026-03-22",
       "description": "Интеграция с Claude Cookbook — официальные примеры Anthropic для Claude API"
+    },
+    "promt-tdd-implementation.md": {
+      "name": "promt-tdd-implementation.md",
+      "file": "universal/ai_agent_prompts/promt-tdd-implementation.md",
+      "version": "1.0.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "tdd",
+        "testing",
+        "implementation",
+        "test-driven",
+        "quality"
+      ],
+      "created_at": "2026-03-22",
+      "description": "Test-Driven Development: write failing tests first, then implement code"
+    },
+    "promt-llm-review.md": {
+      "name": "promt-llm-review.md",
+      "file": "universal/ai_agent_prompts/promt-llm-review.md",
+      "version": "1.0.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "llm",
+        "review",
+        "security",
+        "performance",
+        "architecture",
+        "quality",
+        "multi-model"
+      ],
+      "created_at": "2026-03-22",
+      "description": "Multi-LLM code review using different AI perspectives for security, performance, architecture"
+    },
+    "promt-research.md": {
+      "name": "promt-research.md",
+      "file": "universal/ai_agent_prompts/promt-research.md",
+      "version": "1.0.0",
+      "tier": "universal",
+      "immutable": false,
+      "overridable": true,
+      "tags": [
+        "research",
+        "documentation",
+        "best-practices",
+        "planning",
+        "resources"
+      ],
+      "created_at": "2026-03-22",
+      "description": "Research phase before planning: gather documentation, best practices, similar projects"
     }
   },
-  "total_prompts": 39
+  "total_prompts": 42
 }
