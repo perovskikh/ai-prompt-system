@@ -299,7 +299,34 @@ claude mcp add p9i -- docker run --rm -i \
   -v $PWD/.env:/app/.env \
   -v $PWD:/project \
   -v $PWD/memory:/app/memory \
-  p9i-mcp-server:latest
+  p9i
+```
+
+### Проверка работы MCP
+
+```bash
+# Проверить статус контейнеров
+docker ps | grep p9i
+
+# Тестирование внутри контейнера
+docker exec p9i-mcp-server-1 python3 -c "
+from src.api.server import list_prompts
+result = list_prompts()
+print('MCP OK:', result.get('count', 0), 'prompts')
+"
+
+# Тестирование LLM
+docker exec p9i-mcp-server-1 python3 -c "
+import asyncio
+from src.services.llm_client import LLMClient
+
+async def test():
+    client = LLMClient()
+    r = await client.chat([{'role': 'user', 'content': 'Hi'}], max_tokens=20)
+    print('LLM OK:', client.provider)
+
+asyncio.run(test())
+"
 ```
 
 **Для чего нужно:**
@@ -321,7 +348,7 @@ claude mcp add p9i -- docker run --rm -i \
         "-v", "$PWD/.env:/app/.env",
         "-v", "$PWD:/project",
         "-v", "$PWD/memory:/app/memory",
-        "p9i-mcp-server:latest"
+        "p9i"
       ]
     }
   }
