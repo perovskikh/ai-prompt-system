@@ -34,13 +34,15 @@ curl -X POST http://localhost:8000/sse -d '{"jsonrpc":"2.0","method":"tools/call
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 1 | ✅ Complete | Tiered directories, baseline lock |
-| Phase 2 | ✅ Complete | TieredPromptLoader, cascade priority |
+| Phase 2 | ✅ Complete | PromptStorageV2, cascade priority |
 | Phase 3 | ✅ Complete | 7 MPV stage prompts |
 | Phase 4 | ✅ Complete | Plugin Packs (k8s-pack, ci-cd-pack) |
 | Phase 5 | ✅ Complete | JWT Auth, RBAC, HTTPS Proxy |
 | Phase 6 | ✅ Complete | Context7 MCP Integration |
 | Phase 7 | ✅ Complete | ADR-004 Pipeline (interview, decompose, checkpoint) |
 | Phase 8 | ✅ Complete | ADR-005 UI/UX Generation (Tailwind, shadcn, Textual, Tauri) |
+| Phase 9 | ✅ Complete | ADR-007 Multi-Agent Orchestrator (5 agents) |
+| Phase 10 | ✅ Complete | Clean Architecture refactoring (P0-P3) |
 
 **Всего промтов:** 40 | **Universal:** 38 | **Core:** 1 | **MPV:** 7
 
@@ -53,18 +55,20 @@ curl -X POST http://localhost:8000/sse -d '{"jsonrpc":"2.0","method":"tools/call
 - ✅ **Версионирование** — PostgreSQL для хранения версий и rollback
 - ✅ **Multi-tenant изоляция** — API Keys для разделения проектов
 - ✅ **Git Submodule** — подключение к проектам через субмодуль
-- ✅ **MCP Server** — FastMCP (70% MCP серверов используют)
+- ✅ **MCP Server** — FastMCP (18 tools)
 - ✅ **Гибридное хранилище** — Redis (hot) + PostgreSQL (persistent)
 - ✅ **Audit Logging** — полное логирование всех операций
 - ✅ **Tiered Architecture** — CORE → UNIVERSAL → MPV_STAGES → PROJECTS
 - ✅ **Baseline Verification** — SHA256 контроль целостности промтов
 - ✅ **Cascade Priority** — приоритетная загрузка по tiers
 - ✅ **Plugin Packs** — k8s-pack, ci-cd-pack с триггерами
-- ✅ **JWT Authentication** — токены с refresh mechanism
+- ✅ **JWT Authentication** — токены с refresh mechanism + Redis persistence
 - ✅ **Tier-based RBAC** — роли: admin, developer, user, guest
 - ✅ **HTTPS Proxy** — Caddy с автоматическим HTTPS
 - ✅ **Pipeline (ADR-004)** — interview, decompose, checkpoint
 - ✅ **UI/UX Generation (ADR-005)** — Tailwind, shadcn, Textual, Tauri
+- ✅ **Multi-Agent Orchestrator (ADR-007)** — 5 AI агентов с маршрутизацией
+- ✅ **Clean Architecture** — domain/application/infrastructure/servcies слои
 
 ---
 
@@ -93,7 +97,7 @@ curl -X POST http://localhost:8000/sse -d '{"jsonrpc":"2.0","method":"tools/call
 
 ---
 
-## MCP Tools (28)
+## MCP Tools (18)
 
 ### Основные
 | Инструмент | Назначение |
@@ -126,6 +130,15 @@ curl -X POST http://localhost:8000/sse -d '{"jsonrpc":"2.0","method":"tools/call
 | `generate_shadcn` | shadcn/ui компонент |
 | `generate_textual` | Textual TUI компонент |
 | `generate_tauri` | Tauri десктоп приложение |
+
+### Multi-Agent Orchestrator (ADR-007)
+| Инструмент | Назначение |
+|------------|------------|
+| `p9i_siri` | Central router (Siri-like) |
+| `architect_design` | Architecture design |
+| `developer_code` | Code generation |
+| `reviewer_check` | Code review |
+| `list_agents` | List all agents |
 
 ### Интеграции
 | Инструмент | Назначение |
@@ -169,6 +182,25 @@ curl -X POST http://localhost:8000/sse -d '{"jsonrpc":"2.0","method":"tools/call
 | `test`, `тест` | promt-quality-test | Тестирование |
 | `security`, `безопасност` | promt-security-audit | Аудит безопасности |
 | `init p9i`, `адаптируй` | promt-system-adapt | Адаптация к проекту |
+
+### Multi-Agent Routing
+
+p9i автоматически маршрутизирует запросы к нужным агентам:
+
+| Ключевое слово | Агент | Назначение |
+|----------------|-------|------------|
+| `спроектируй`, `архитектура`, `adr` | Architect | Архитектура, ADRs |
+| `создай`, `добавь`, `код` | Developer | Генерация кода |
+| `ревью`, `проверь`, `аудит` | Reviewer | Ревью, безопасность |
+| `дизайн`, `ui`, `ux` | Designer | UI/UX генерация |
+| `ci`, `cd`, `deploy`, `docker` | DevOps | CI/CD, деплой |
+
+**Доступные агенты:**
+- **Architect** — проектирование, ADRs
+- **Developer** — код, фичи, баги
+- **Reviewer** — ревью, безопасность, тесты
+- **Designer** — UI/UX (Tailwind, shadcn)
+- **DevOps** — CI/CD, Docker, Kubernetes
 
 ---
 
@@ -486,17 +518,44 @@ pytest --cov=src
 
 ---
 
-## Структура проекта
+## Структура проекта (Clean Architecture)
 
 ```
 p9i/
-├── src/api/server.py       # FastMCP (28 tools)
-├── src/services/           # executor, llm_client, memory
-├── prompts/                # 40+ markdown промтов
-├── memory/                 # Память проектов
-├── docker/                 # Dockerfile, docker-compose
+├── src/
+│   ├── api/server.py           # FastMCP (18 tools)
+│   ├── application/            # Use cases, DTOs, Container
+│   │   ├── container.py        # DI Container
+│   │   ├── agent_router.py    # Agent routing
+│   │   └── dto/               # Pydantic DTOs
+│   ├── domain/                 # Entities, Repository interfaces
+│   │   ├── entities/           # PromptEntity, ProjectEntity, AgentEntity
+│   │   └── repositories/       # IPromptRepository, IProjectRepository
+│   ├── infrastructure/          # External adapters
+│   │   └── adapters/
+│   │       ├── llm/           # LLM providers (Anthropic, GLM, DeepSeek)
+│   │       └── external/       # Figma adapter
+│   ├── services/               # Business logic
+│   ├── storage/                # Data layer
+│   └── middleware/            # JWT, RBAC
+├── prompts/                     # 40+ markdown промтов
+├── memory/                      # Память проектов
+├── docker/                      # Dockerfile, docker-compose
 └── README.md
 ```
+
+---
+
+## Clean Architecture Layers
+
+| Layer | Description |
+|-------|-------------|
+| **domain** | Entities, Business rules, Repository interfaces |
+| **application** | Use cases, DTOs, Container, Agent routing |
+| **infrastructure** | External adapters (LLM, Figma, Redis) |
+| **services** | Business logic (Executor, Memory) |
+| **storage** | Data access (Prompts, Database) |
+| **middleware** | Cross-cutting (JWT, RBAC) |
 
 ---
 
